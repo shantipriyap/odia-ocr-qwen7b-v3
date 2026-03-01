@@ -1,126 +1,86 @@
-# Hunyuan Odia OCR
+---
+language:
+- or
+license: apache-2.0
+tags:
+- ocr
+- odia
+- hunyuan
+- fine-tuned
+- lora
+base_model: tencent/HunyuanOCR
+datasets:
+- OdiaGenAIOCR/odia-ocr-merged
+---
 
-Fine-tuning [tencent/HunyuanOCR](https://huggingface.co/tencent/HunyuanOCR) on the Odia script using LoRA.
+# HunyuanOCR Fine-tuned for Odia OCR
 
-**Model on HuggingFace:** [shantipriya/hunyuan-ocr-odia](https://huggingface.co/shantipriya/hunyuan-ocr-odia)  
-**Dataset:** [OdiaGenAIOCR/odia-ocr-merged](https://huggingface.co/datasets/OdiaGenAIOCR/odia-ocr-merged)
+Fine-tuned [tencent/HunyuanOCR](https://huggingface.co/tencent/HunyuanOCR) on the
+[OdiaGenAIOCR/odia-ocr-merged](https://huggingface.co/datasets/OdiaGenAIOCR/odia-ocr-merged)
+dataset using LoRA (r=64, alpha=128).
+
+**GitHub:** [shantipriyap/hunyuan_odia_ocr](https://github.com/shantipriyap/hunyuan_odia_ocr)
 
 ---
 
-## Repository Contents
+## Evaluation Results
 
-| File | Description |
-|---|---|
-| `hunyuan_odia_ocr_train_v8.py` | Latest training script (LoRA r=64, 5000 steps) |
-| `inference.py` | Run inference with a fine-tuned checkpoint |
-| `eval.py` | Evaluate CER/WER on test split |
-| `requirements.txt` | Python dependencies |
-| `setup_hunyuanocr_mac.sh` | macOS dev environment setup |
-
----
-
-## Results
-
-| Checkpoint | Steps | CER | WER | Notes |
+| Checkpoint | Steps | CER↓ | WER↓ | Notes |
 |---|---|---|---|---|
-| Baseline (zero-shot) | 0 | 0.9111 | 0.9467 | No fine-tuning |
+| Baseline (zero-shot) | 0 | 0.9111 | 0.9467 | HunyuanOCR, no fine-tuning |
 | v5 (r=32) | 1000 | **0.7577** | **0.846** | Best CER so far |
 | v7 (r=32) | 3200 | 0.7909 | 0.941 | r=32 capacity ceiling |
-| v8 (r=64) | 5000 | *in training* | — | Current run |
+| v8 baseline | 0 | 1.1188 | 1.4385 | Before v8 training |
+| **v8 ckpt-2500** (current) | 2500 | *in training* | — | Loss best=0.9964 @ step 2100 |
 
 ---
 
-## Inference Samples *(checkpoint-1250, step 25% of training)*
+## Inference Samples *(checkpoint-2500, step 50% of training)*
 
-> Images are from the `OdiaGenAIOCR/odia-ocr-merged` test split.  
-> Full evaluation at step 5000 will update the CER column above.
+Samples selected from 30 test images to show range of model quality at mid-training.
 
-<table>
-  <tr>
-    <th>Image</th>
-    <th>Ground Truth</th>
-    <th>Prediction (ckpt-1250)</th>
-    <th>CER</th>
-  </tr>
-  <tr>
-    <td><img src="https://huggingface.co/shantipriya/hunyuan-ocr-odia/resolve/main/samples/sample_01.jpg" width="220"/></td>
-    <td>ଚଳେଇବାପାଇଁ</td>
-    <td>ବାହୁଡ଼ା</td>
-    <td>0.90</td>
-  </tr>
-  <tr>
-    <td><img src="https://huggingface.co/shantipriya/hunyuan-ocr-odia/resolve/main/samples/sample_02.jpg" width="220"/></td>
-    <td>ପୁନର୍ନଭା</td>
-    <td>ବାହୁ</td>
-    <td>1.00</td>
-  </tr>
-  <tr>
-    <td><img src="https://huggingface.co/shantipriya/hunyuan-ocr-odia/resolve/main/samples/sample_03.jpg" width="220"/></td>
-    <td>ଟ୍ରଷ୍ଟର</td>
-    <td>ବାହୁ</td>
-    <td>1.00</td>
-  </tr>
-  <tr>
-    <td><img src="https://huggingface.co/shantipriya/hunyuan-ocr-odia/resolve/main/samples/sample_04.jpg" width="220"/></td>
-    <td>ସୀମାର</td>
-    <td>E151182</td>
-    <td>1.40</td>
-  </tr>
-  <tr>
-    <td><img src="https://huggingface.co/shantipriya/hunyuan-ocr-odia/resolve/main/samples/sample_05.jpg" width="220"/></td>
-    <td>ଟ୍ୟୁବରକୁଲୋସିସ</td>
-    <td>ବାହୁଡ଼ା</td>
-    <td>0.85</td>
-  </tr>
-  <tr>
-    <td><img src="https://huggingface.co/shantipriya/hunyuan-ocr-odia/resolve/main/samples/sample_06.jpg" width="220"/></td>
-    <td>ଟ୍ରାନ୍ସଭର୍ସସ</td>
-    <td>ବେକ୍ଟର</td>
-    <td>0.83</td>
-  </tr>
-</table>
+| Image | Ground Truth | Prediction | CER | Quality |
+|:---:|:---|:---|:---:|:---:|
+| <img src="https://huggingface.co/shantipriya/hunyuan-ocr-odia/resolve/main/samples2/sample_01.jpg" width="220"/> | ସର୍ଚ୍ଚ | ସମ୍ପର୍କ | 0.67 | ✅ Good |
+| <img src="https://huggingface.co/shantipriya/hunyuan-ocr-odia/resolve/main/samples2/sample_02.jpg" width="220"/> | ଲବଙ୍ଗକୁ | ମାନଙ୍କ | 0.71 | ✅ Good |
+| <img src="https://huggingface.co/shantipriya/hunyuan-ocr-odia/resolve/main/samples2/sample_03.jpg" width="220"/> | ସର୍ଚ୍ଚ | ସମ୍ପର୍କ | 0.67 | 🟡 Mixed |
+| <img src="https://huggingface.co/shantipriya/hunyuan-ocr-odia/resolve/main/samples2/sample_04.jpg" width="220"/> | ଲବଙ୍ଗକୁ | ମାନଙ୍କ | 0.71 | 🟡 Mixed |
+| <img src="https://huggingface.co/shantipriya/hunyuan-ocr-odia/resolve/main/samples2/sample_05.jpg" width="220"/> | ପ୍ଲାଜ୍ମାରେ | ପ୍ରତିଦ୍ଵନ୍ଦୀ | 0.90 | 🔴 Poor |
+| <img src="https://huggingface.co/shantipriya/hunyuan-ocr-odia/resolve/main/samples2/sample_06.jpg" width="220"/> | ହୋଇଯାନ୍ତି | ପ୍ରତିଦ୍ଵନ୍ଦୀ | 1.11 | 🔴 Poor |
 
-*Model outputs valid Odia script at step 1250. Loss dropped to 0.9964 by step 2100 — quality expected to improve significantly by step 5000.*
+*✅ Good = CER < 0.40 · 🟡 Mixed = CER 0.40–0.80 · 🔴 Poor = CER > 0.80*
 
 ---
 
-## Training
+## Training Loss Curve (v8, r=64)
 
-### Requirements
+| Step | Loss |
+|---|---|
+| 10 | 2.3695 |
+| 500 | ~1.18 |
+| 910 | 1.0948 |
+| 1500 | ~1.11 |
+| **2100** | **0.9964** ← first sub-1.0 |
+| 2517 | ~1.12 (in training, 50% done) |
 
-- Python 3.12+
-- NVIDIA GPU (A100 80GB recommended)
-- CUDA 12+
+---
 
-### Setup
-
-```bash
-git clone https://github.com/shantipriyap/hunyuan_odia_ocr.git
-cd hunyuan_odia_ocr
-python3 -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
-```
-
-### Run Training
-
-```bash
-python hunyuan_odia_ocr_train_v8.py
-```
-
-Key hyperparameters (edit at the top of the script):
+## Training Configuration
 
 | Parameter | Value |
 |---|---|
+| Base model | tencent/HunyuanOCR |
 | LoRA rank | 64 |
 | LoRA alpha | 128 |
 | Learning rate | 2e-4 |
 | Warmup steps | 100 |
 | Max steps | 5000 |
+| Batch size | 1 (grad_accum=4) |
 | Max seq len | 2048 |
 
 ---
 
-## Inference
+## Quick Start
 
 ```python
 import torch
@@ -128,8 +88,8 @@ from PIL import Image
 from transformers import HunYuanVLForConditionalGeneration, AutoProcessor
 from peft import PeftModel
 
-BASE = "tencent/HunyuanOCR"
-CKPT = "shantipriya/hunyuan-ocr-odia"   # or path to local checkpoint
+BASE  = "tencent/HunyuanOCR"
+CKPT  = "shantipriya/hunyuan-ocr-odia"
 
 base  = HunYuanVLForConditionalGeneration.from_pretrained(
     BASE, torch_dtype=torch.bfloat16,
@@ -138,9 +98,9 @@ model = PeftModel.from_pretrained(base, CKPT)
 model.eval()
 proc  = AutoProcessor.from_pretrained(BASE, use_fast=False)
 
-img  = Image.open("odia_image.jpg").convert("RGB")
-msgs = [
-    {"role": "system", "content": ""},   # required -- do not omit
+img   = Image.open("odia_image.jpg").convert("RGB")
+msgs  = [
+    {"role": "system", "content": ""},        # required
     {"role": "user", "content": [
         {"type": "image", "image": img},
         {"type": "text",  "text": "Extract all Odia text from this image. Return only the Odia text."},
@@ -148,7 +108,6 @@ msgs = [
 ]
 text   = proc.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
 inputs = proc(text=[text], images=[img], return_tensors="pt").to("cuda")
-
 with torch.no_grad():
     gen = model.generate(**inputs, max_new_tokens=256, do_sample=False)
 result = proc.batch_decode(
@@ -157,16 +116,7 @@ result = proc.batch_decode(
 print(result)
 ```
 
-> **Note:** The empty `system` message is **required** to avoid a `position_ids` shape error
-> in HunyuanOCR's attention layer.
-
----
-
-## macOS Dev Setup
-
-```bash
-bash setup_hunyuanocr_mac.sh
-```
+> **Note:** The empty `system` message is **required** — omitting it causes a `position_ids` dimension error.
 
 ---
 
