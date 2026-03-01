@@ -37,32 +37,32 @@ dataset using LoRA (r=64, alpha=128).
 
 ---
 
-## Inference Samples *(checkpoint-3250, step 67% of training)*
+## Inference Samples *(checkpoint-4000, step 80% of training)*
 
-Evaluated on 50 word-crop samples from [OdiaGenAIOCR/odia-ocr-merged](https://huggingface.co/datasets/OdiaGenAIOCR/odia-ocr-merged) test split. Samples are filtered by CER into three tiers.
+Evaluated on 60 word-crop samples from [OdiaGenAIOCR/odia-ocr-merged](https://huggingface.co/datasets/OdiaGenAIOCR/odia-ocr-merged) test split. **Avg CER: 1.16 | Best CER: 0.64** (60 samples, ckpt-4000).
 
-> **Note:** Training is still in progress (67% of 5000 steps). No sample scored CER < 0.35 yet — the best tier shows the *relatively* best outputs from this mid-training checkpoint.
+> **Note:** Training is 80% complete (4000/5000 steps). Mode collapse persists — model outputs a small set of common Odia words. Expected to improve in final steps.
 
-### 🟡 Best Available (lowest CER from 50 samples)
-
-| Image | Ground Truth | Prediction | CER |
-|:---:|:---:|:---:|:---:|
-| <img src="https://huggingface.co/shantipriya/hunyuan-ocr-odia/resolve/main/samples4/word_01.jpg" width="220"/> | ମାଷ୍ଟର୍ | ପୁଷ୍ଟିକୁ | 0.71 |
-| <img src="https://huggingface.co/shantipriya/hunyuan-ocr-odia/resolve/main/samples4/word_02.jpg" width="220"/> | ଚାଷୀମାନେ | ପାଇଥିଲେ | 0.75 |
-
-### 🟠 Partial (CER 0.80–1.0)
+### 🟡 Best Available (CER 0.64–0.70)
 
 | Image | Ground Truth | Prediction | CER |
 |:---:|:---:|:---:|:---:|
-| <img src="https://huggingface.co/shantipriya/hunyuan-ocr-odia/resolve/main/samples4/word_03.jpg" width="220"/> | ଟ୍ୟୁବରକୁଲୋସିସ | ପ୍ରତିଦ୍ଵନ୍ଦୀ | 0.92 |
-| <img src="https://huggingface.co/shantipriya/hunyuan-ocr-odia/resolve/main/samples4/word_04.jpg" width="220"/> | ଦେବୀମାହାତ୍ମ୍ୟ | ପ୍ରତିବାଦ | 0.92 |
+| <img src="https://huggingface.co/shantipriya/hunyuan-ocr-odia/resolve/main/samples5/word_01.jpg" width="220"/> | ବାକିମାନଙ୍କୁ | ବାଲିକା | 0.64 |
+| <img src="https://huggingface.co/shantipriya/hunyuan-ocr-odia/resolve/main/samples5/word_02.jpg" width="220"/> | ନିର୍ଦ୍ଧାରଣ | ବିଶ୍ଵାସ | 0.70 |
 
-### 🔴 Poor (CER > 2.0)
+### 🟠 Partial (CER 1.0)
 
 | Image | Ground Truth | Prediction | CER |
 |:---:|:---:|:---:|:---:|
-| <img src="https://huggingface.co/shantipriya/hunyuan-ocr-odia/resolve/main/samples4/word_05.jpg" width="220"/> | ଟେକି | ପ୍ରତିକ୍ରିୟା | 2.25 |
-| <img src="https://huggingface.co/shantipriya/hunyuan-ocr-odia/resolve/main/samples4/word_06.jpg" width="220"/> | ଛନ୍ଦ | ପ୍ରତିକ୍ରିୟା | 2.50 |
+| <img src="https://huggingface.co/shantipriya/hunyuan-ocr-odia/resolve/main/samples5/word_03.jpg" width="220"/> | ଲବଙ୍ଗକୁ | ମୁଖ୍ୟସ୍ଥ | 1.00 |
+| <img src="https://huggingface.co/shantipriya/hunyuan-ocr-odia/resolve/main/samples5/word_04.jpg" width="220"/> | ଗ୍ରାଫ୍ | ବିଶ୍ୱର | 1.00 |
+
+### 🔴 Poor (CER > 3.0)
+
+| Image | Ground Truth | Prediction | CER |
+|:---:|:---:|:---:|:---:|
+| <img src="https://huggingface.co/shantipriya/hunyuan-ocr-odia/resolve/main/samples5/word_05.jpg" width="220"/> | ୫୦ | ବିଶ୍ୱର | 3.00 |
+| <img src="https://huggingface.co/shantipriya/hunyuan-ocr-odia/resolve/main/samples5/word_06.jpg" width="220"/> | ୫୨ | ବିଶ୍ୱାସ | 3.50 |
 
 ---
 
