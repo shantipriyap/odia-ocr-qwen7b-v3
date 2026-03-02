@@ -5,137 +5,85 @@ license: apache-2.0
 tags:
 - ocr
 - odia
-- hunyuan
+- qwen
 - fine-tuned
 - lora
-base_model: tencent/HunyuanOCR
+- vision-language
+base_model: Qwen/Qwen2.5-VL-7B-Instruct
 datasets:
-- OdiaGenAIOCR/odia-ocr-merged
+- OdiaGenAIOCR/synthetic_data
+- shantipriya/odia-ocr-merged
 ---
 
-# HunyuanOCR Fine-tuned for Odia OCR
+# Odia OCR — Qwen2.5-VL-7B Phase 3
 
-Fine-tuned [tencent/HunyuanOCR](https://huggingface.co/tencent/HunyuanOCR) on the
-[OdiaGenAIOCR/odia-ocr-merged](https://huggingface.co/datasets/OdiaGenAIOCR/odia-ocr-merged)
-dataset using LoRA (r=64, alpha=128).
+Fine-tuning [Qwen2.5-VL-7B-Instruct](https://huggingface.co/Qwen/Qwen2.5-VL-7B-Instruct) for **Odia script OCR** — paragraph-level text recognition from document images.
 
-**GitHub:** [shantipriyap/hunyuan_odia_ocr](https://github.com/shantipriyap/hunyuan_odia_ocr)
-
----
-
-## Evaluation Results
-
-| Checkpoint | Steps | CER↓ | WER↓ | Notes |
-|---|---|---|---|---|
-| Baseline (zero-shot) | 0 | 0.9111 | 0.9467 | HunyuanOCR, no fine-tuning |
-| v5 (r=32) | 1000 | **0.7577** | **0.846** | Best word-level CER so far |
-| v7 (r=32) | 3200 | 0.7909 | 0.941 | r=32 capacity ceiling |
-| v8 baseline | 0 | 1.1188 | 1.4385 | Before v8 training |
-| **v8 ckpt-3250** (latest) | 3250 | *in training* | — | Loss ~0.93 best; 67% done |
-
-> **Note on evaluation:** Training uses word-level crops (`OdiaGenAIOCR/odia-ocr-merged`). The `Iftesha/odia-ocr-benchmark` dataset contains paragraph-level images — a different domain where this model scores CER ~0.99 (expected, not trained on paragraphs).
+**GitHub:** [shantipriyap/odia-ocr-qwen7b-v3](https://github.com/shantipriyap/odia-ocr-qwen7b-v3)  
+**Fine-tuned model:** [shantipriya/odia-ocr-qwen7b-phase3](https://huggingface.co/shantipriya/odia-ocr-qwen7b-phase3)
 
 ---
 
-## Inference Samples *(checkpoint-4000, step 80% of training)*
-
-Evaluated on 60 word-crop samples from [OdiaGenAIOCR/odia-ocr-merged](https://huggingface.co/datasets/OdiaGenAIOCR/odia-ocr-merged) test split. **Avg CER: 1.16 | Best CER: 0.64** (60 samples, ckpt-4000).
-
-> **Note:** Training is 80% complete (4000/5000 steps). Mode collapse persists — model outputs a small set of common Odia words. Expected to improve in final steps.
-
-### 🟡 Best Available (CER 0.64–0.70)
-
-| Image | Ground Truth | Prediction | CER |
-|:---:|:---:|:---:|:---:|
-| <img src="https://huggingface.co/shantipriya/hunyuan-ocr-odia/resolve/main/samples5/word_01.jpg" width="220"/> | ବାକିମାନଙ୍କୁ | ବାଲିକା | 0.64 |
-| <img src="https://huggingface.co/shantipriya/hunyuan-ocr-odia/resolve/main/samples5/word_02.jpg" width="220"/> | ନିର୍ଦ୍ଧାରଣ | ବିଶ୍ଵାସ | 0.70 |
-
-### 🟠 Partial (CER 1.0)
-
-| Image | Ground Truth | Prediction | CER |
-|:---:|:---:|:---:|:---:|
-| <img src="https://huggingface.co/shantipriya/hunyuan-ocr-odia/resolve/main/samples5/word_03.jpg" width="220"/> | ଲବଙ୍ଗକୁ | ମୁଖ୍ୟସ୍ଥ | 1.00 |
-| <img src="https://huggingface.co/shantipriya/hunyuan-ocr-odia/resolve/main/samples5/word_04.jpg" width="220"/> | ଗ୍ରାଫ୍ | ବିଶ୍ୱର | 1.00 |
-
-### 🔴 Poor (CER > 3.0)
-
-| Image | Ground Truth | Prediction | CER |
-|:---:|:---:|:---:|:---:|
-| <img src="https://huggingface.co/shantipriya/hunyuan-ocr-odia/resolve/main/samples5/word_05.jpg" width="220"/> | ୫୦ | ବିଶ୍ୱର | 3.00 |
-| <img src="https://huggingface.co/shantipriya/hunyuan-ocr-odia/resolve/main/samples5/word_06.jpg" width="220"/> | ୫୨ | ବିଶ୍ୱାସ | 3.50 |
-
----
-
-## Training Loss Curve (v8, r=64)
-
-| Step | Loss |
-|---|---|
-| 10 | 2.3695 |
-| 500 | ~1.18 |
-| 910 | 1.0948 |
-| 1500 | ~1.11 |
-| **2100** | **0.9964** ← first sub-1.0 |
-| 2580 | 0.9339 ← best so far |
-| 2750 | 1.0291 |
-| 3000 | ~0.979 |
-| **3250** | **~0.979** (67% done, in training) |
-
----
-
-## Training Configuration
+## Training Setup
 
 | Parameter | Value |
 |---|---|
-| Base model | tencent/HunyuanOCR |
-| LoRA rank | 64 |
-| LoRA alpha | 128 |
-| Learning rate | 2e-4 |
-| Warmup steps | 100 |
-| Max steps | 5000 |
-| Batch size | 1 (grad_accum=4) |
-| Max seq len | 2048 |
+| Base model | `Qwen/Qwen2.5-VL-7B-Instruct` |
+| Method | LoRA (r=64, alpha=128) |
+| Hardware | 2× NVIDIA A100-SXM4-80GB |
+| GPU 0 | Training (HF Trainer, single-GPU) |
+| GPU 1 | Eval + HF Hub push every 100 steps |
+| Precision | bfloat16 + Flash Attention 2 |
+| Effective batch | 32 (batch=2, grad_accum=16) |
+| Steps | 3000 |
+| Learning rate | 5e-5, warmup=100 |
+| Max seq len | 4096 |
 
----
+## Dataset
 
-## Quick Start
+- [`OdiaGenAIOCR/synthetic_data`](https://huggingface.co/datasets/OdiaGenAIOCR/synthetic_data) — paragraph-level synthetic Odia OCR
+- [`shantipriya/odia-ocr-merged`](https://huggingface.co/datasets/shantipriya/odia-ocr-merged) — 2700 word/line-level samples
 
-```python
-import torch
-from PIL import Image
-from transformers import HunYuanVLForConditionalGeneration, AutoProcessor
-from peft import PeftModel
+## Repository Structure
 
-BASE  = "tencent/HunyuanOCR"
-CKPT  = "shantipriya/hunyuan-ocr-odia"
+```
+phase3_paragraph/
+├── train_2gpu.py    # Main training script (GPU0=train, GPU1=eval+push)
+├── inference.py     # Inference CLI
+└── monitor.py       # Training monitor
 
-base  = HunYuanVLForConditionalGeneration.from_pretrained(
-    BASE, torch_dtype=torch.bfloat16,
-    attn_implementation="eager", device_map="auto")
-model = PeftModel.from_pretrained(base, CKPT)
-model.eval()
-proc  = AutoProcessor.from_pretrained(BASE, use_fast=False)
-
-img   = Image.open("odia_image.jpg").convert("RGB")
-msgs  = [
-    {"role": "system", "content": ""},        # required
-    {"role": "user", "content": [
-        {"type": "image", "image": img},
-        {"type": "text",  "text": "Extract all Odia text from this image. Return only the Odia text."},
-    ]},
-]
-text   = proc.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
-inputs = proc(text=[text], images=[img], return_tensors="pt").to("cuda")
-with torch.no_grad():
-    gen = model.generate(**inputs, max_new_tokens=256, do_sample=False)
-result = proc.batch_decode(
-    [gen[0][inputs["input_ids"].shape[1]:]], skip_special_tokens=True
-)[0].strip()
-print(result)
+eval.py              # Standalone evaluation script
+requirements.txt     # Dependencies
 ```
 
-> **Note:** The empty `system` message is **required** — omitting it causes a `position_ids` dimension error.
+## Inference
 
----
+```bash
+pip install transformers peft torch pillow accelerate
+python phase3_paragraph/inference.py --image odia_doc.jpg
+```
+
+```python
+from transformers import AutoProcessor, Qwen2_5_VLForConditionalGeneration
+from peft import PeftModel
+import torch
+from PIL import Image
+
+processor = AutoProcessor.from_pretrained("Qwen/Qwen2.5-VL-7B-Instruct", trust_remote_code=True)
+model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
+    "Qwen/Qwen2.5-VL-7B-Instruct", torch_dtype=torch.bfloat16, device_map="auto"
+)
+model = PeftModel.from_pretrained(model, "shantipriya/odia-ocr-qwen7b-phase3").eval()
+
+image = Image.open("odia_doc.jpg").convert("RGB")
+prompt = "Extract all Odia text from this image exactly as written, preserving line order and paragraph structure. Return only the Odia text, nothing else."
+msgs = [{"role": "user", "content": [{"type": "image", "image": image}, {"type": "text", "text": prompt}]}]
+text = processor.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
+inputs = processor(text=[text], images=[image], return_tensors="pt").to(model.device)
+with torch.no_grad():
+    out = model.generate(**inputs, max_new_tokens=1024, do_sample=False)
+print(processor.batch_decode(out[:, inputs["input_ids"].shape[1]:], skip_special_tokens=True)[0])
+```
 
 ## License
 
