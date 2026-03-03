@@ -203,6 +203,12 @@ Images contain **paragraph-level** Odia text printed in varied fonts, sizes and 
 
 ## Usage
 
+> **Checkpoint guide:**  
+> - `checkpoint-1800` — latest evaluated checkpoint (CER=0.750, Acc=25%) — recommended for up-to-date weights  
+> - `checkpoint-1300` — ⭐ best overall checkpoint (CER=0.655, Acc=34.5%) — recommended for highest accuracy
+
+### Inference with Checkpoint-1800 (latest)
+
 ```python
 from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
 from peft import PeftModel
@@ -210,14 +216,20 @@ from qwen_vl_utils import process_vision_info
 from PIL import Image
 import torch
 
-# Load base model + LoRA adapter
+REPO = "shantipriya/odia-ocr-qwen-finetuned_v3"
+CHECKPOINT = "checkpoint-1800"   # latest evaluated checkpoint
+
+# Load base model
 base = Qwen2_5_VLForConditionalGeneration.from_pretrained(
     "Qwen/Qwen2.5-VL-7B-Instruct",
     torch_dtype=torch.bfloat16,
     device_map="auto"
 )
-model = PeftModel.from_pretrained(base, "shantipriya/odia-ocr-qwen-finetuned_v3")
-processor = AutoProcessor.from_pretrained("shantipriya/odia-ocr-qwen-finetuned_v3")
+
+# Load LoRA adapter — checkpoint-1800
+model = PeftModel.from_pretrained(base, REPO, revision=CHECKPOINT)
+processor = AutoProcessor.from_pretrained(REPO, revision=CHECKPOINT)
+model.eval()
 
 # Run OCR on an image
 image = Image.open("odia_document.png").convert("RGB")
@@ -246,6 +258,17 @@ output = processor.batch_decode(
     skip_special_tokens=True
 )[0]
 print(output)
+```
+
+### Inference with Checkpoint-1300 (⭐ best accuracy)
+
+To load the best-performing checkpoint instead, replace the two lines above with:
+
+```python
+CHECKPOINT = "checkpoint-1300"   # best checkpoint — CER=0.655, Acc=34.5%
+
+model = PeftModel.from_pretrained(base, REPO, revision=CHECKPOINT)
+processor = AutoProcessor.from_pretrained(REPO, revision=CHECKPOINT)
 ```
 
 ---
