@@ -204,10 +204,51 @@ Images contain **paragraph-level** Odia text printed in varied fonts, sizes and 
 ## Usage
 
 > **Checkpoint guide:**  
-> - `checkpoint-1800` — latest evaluated checkpoint (CER=0.750, Acc=25%) — recommended for up-to-date weights  
-> - `checkpoint-1300` — ⭐ best overall checkpoint (CER=0.655, Acc=34.5%) — recommended for highest accuracy
+> - **Merged model** — `shantipriya/odia-ocr-qwen-finetuned_v3-merged` — fully merged weights, no PEFT required, easiest to use  
+> - `checkpoint-1800` — latest LoRA adapter (CER=0.750, Acc=25%)  
+> - `checkpoint-1300` — ⭐ best LoRA adapter (CER=0.655, Acc=34.5%)
 
-### Inference with Checkpoint-1800 (latest)
+### Option A — Merged Model (Easiest, No PEFT Required)
+
+The fully merged model (base + LoRA-1800 baked in) is available as a standalone model:
+
+```python
+from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
+from qwen_vl_utils import process_vision_info
+from PIL import Image
+import torch
+
+model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
+    "shantipriya/odia-ocr-qwen-finetuned_v3-merged",
+    torch_dtype=torch.bfloat16,
+    device_map="auto",
+)
+processor = AutoProcessor.from_pretrained("shantipriya/odia-ocr-qwen-finetuned_v3-merged")
+model.eval()
+
+image = Image.open("odia_document.png").convert("RGB")
+messages = [{{
+    "role": "user",
+    "content": [
+        {{"type": "image", "image": image}},
+        {{"type": "text",  "text": "Transcribe all the Odia text from this image exactly as it appears."}}
+    ]
+}}]
+
+text = processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+image_inputs, _ = process_vision_info(messages)
+inputs = processor(text=[text], images=image_inputs, return_tensors="pt").to(model.device)
+
+with torch.no_grad():
+    generated_ids = model.generate(**inputs, max_new_tokens=512)
+
+output = processor.batch_decode(
+    generated_ids[:, inputs.input_ids.shape[1]:], skip_special_tokens=True
+)[0]
+print(output)
+```
+
+### Option B — LoRA Adapter with Checkpoint-1800 (latest)
 
 ```python
 from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
@@ -260,7 +301,7 @@ output = processor.batch_decode(
 print(output)
 ```
 
-### Inference with Checkpoint-1300 (⭐ best accuracy)
+### Option C — LoRA Adapter with Checkpoint-1300 (⭐ best accuracy)
 
 To load the best-performing checkpoint instead, replace the two lines above with:
 
