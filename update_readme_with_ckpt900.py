@@ -287,6 +287,10 @@ Training loss drops sharply as the model adapts to Odia OCR:
 
 > ⚠️ **Overfitting note**: Best checkpoint is **1300** (CER=0.655, Acc=34.5%). Performance degrades after step 1300 despite training loss continuing to drop.
 
+### Benchmark CER & Accuracy vs Checkpoint
+
+![Benchmark CER and Accuracy vs Checkpoint](https://huggingface.co/shantipriya/odia-ocr-qwen-finetuned_v3/resolve/main/assets/benchmark_cer_accuracy.png)
+
 > Checkpoints are pushed every 100 training steps.  
 > Accuracy is reported as **1 − CER** (character-level).  
 > ⚠️ **Eval dataset note**: Steps 0/100/200 used **word-level** images (`shantipriya/odia-ocr-merged`, single words), which yields lower CER. Step 300 used **paragraph-level** images (`OdiaGenAIOCR/synthetic_data`, full paragraphs, ~300 chars) — a much harder task. The lower accuracy at step 300 reflects the harder benchmark, not regression. Full paragraph-level evaluation will be the standard going forward.
