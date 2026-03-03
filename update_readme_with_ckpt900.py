@@ -9,7 +9,7 @@ Run this after /tmp/eval_full_ckpt900_results.json is produced on the server.
 import subprocess, json, sys
 
 SERVER = "root@135.181.63.224"
-REMOTE_JSON = "/tmp/eval_full_ckpt1500_results.json"
+REMOTE_JSON = "/tmp/eval_full_ckpt1600_results.json"
 
 # ── 1. Download results ──────────────────────────────────────────────────────
 print("Downloading eval results from server …")
@@ -30,7 +30,7 @@ for s in samples:
     by_cat.setdefault(cat, []).append(s.get("cer", 1.0))
 
 # Summary
-print("\n=== Per-category CER (checkpoint-1500) ===")
+print("\n=== Per-category CER (checkpoint-1600) ===")
 cat_rows = []
 for cat in ["scene_text", "handwritten", "Digital", "Book", "Newspaper", "printed"]:
     if cat in by_cat:
@@ -51,7 +51,7 @@ print(f"\n  {'Overall':15s} n={len(samples):3d}  CER={overall_cer:.3f}  Acc={ove
 # ── 2b. Download sample manifest (images already uploaded to HF) ─────────────
 print("\nDownloading sample manifest …")
 proc2 = subprocess.run(
-    ["ssh", SERVER, "cat /tmp/bench_manifest_ckpt1500.json"],
+    ["ssh", SERVER, "cat /tmp/bench_manifest_ckpt1600.json"],
     capture_output=True, text=True, timeout=30
 )
 manifest = json.loads(proc2.stdout) if proc2.returncode == 0 else []
@@ -98,15 +98,15 @@ for cat in CAT_ORDER:
         per_cat_sections += build_cat_section(cat, man_by_cat[cat])
 
 sample_section = f"""
-### Sample Inferences — Checkpoint 1500 (5 per category)
+### Sample Inferences — Checkpoint 1600 (5 per category)
 
 Each row shows the original image, ground truth text, and model prediction.
 Quality icons: ✅ Good (CER < 0.15) · 🔶 Mixed (CER 0.15–0.65) · ❌ Bad (CER > 0.65)
 
 {per_cat_sections}
 > Evaluated on [Iftesha/odia-ocr-benchmark](https://huggingface.co/datasets/Iftesha/odia-ocr-benchmark) — **out-of-domain** from training data.  
-> Model performs best on **handwritten** (62.3% acc) and **scene_text** (52.8% acc).  
-> `Book` / `Newspaper` / `printed` remain challenging at this training stage (step 900/3000).
+> Model performs best on **handwritten** (63.4% acc) and **scene_text** (33.2% acc).  
+> `Book` / `Newspaper` / `printed` remain challenging at this training stage (step 1600/3000).
 """
 
 from huggingface_hub import HfApi
@@ -253,7 +253,8 @@ Training loss drops sharply as the model adapts to Odia OCR:
 | **1200** | — | — | — | — |
 | **1300** | — | **0.655** | **34.5%** | paragraph-level |
 | **1400** | **0.015** | **0.690** | **31.0%** | paragraph-level |
-| **1500** | **0.012** | **{overall_cer:.3f}** | **{overall_acc:.1f}%** | paragraph-level |
+| **1500** | **0.012** | **0.690** | **31.0%** | paragraph-level |
+| **1600** | **0.010** | **{overall_cer:.3f}** | **{overall_acc:.1f}%** | paragraph-level |
 | … (training ongoing) | ↓ | ↓ | ↑ | |
 
 > Checkpoints are pushed every 100 training steps.  
@@ -262,15 +263,15 @@ Training loss drops sharply as the model adapts to Odia OCR:
 
 ---
 
-## Checkpoint-1500 Benchmark Results (151 samples — Iftesha/odia-ocr-benchmark)
+## Checkpoint-1600 Benchmark Results (151 samples — Iftesha/odia-ocr-benchmark)
 
-Evaluated on all 151 out-of-domain samples across 6 categories at **checkpoint-1500**:
+Evaluated on all 151 out-of-domain samples across 6 categories at **checkpoint-1600**:
 
 | Category | Samples | Avg CER | Accuracy (1−CER) |
 |----------|--------:|--------:|----------------:|
 {cat_table_rows}
 > Benchmark: [Iftesha/odia-ocr-benchmark](https://huggingface.co/datasets/Iftesha/odia-ocr-benchmark)  
-> Latest checkpoint-1500 results (CER={overall_cer:.3f}). Compare: ckpt-1400 CER=0.690, ckpt-1300 CER=0.655, ckpt-900 CER=0.804.
+> Latest checkpoint-1600 results (CER={overall_cer:.3f}). Compare: ckpt-1500 CER=0.690, ckpt-1300 CER=0.655 (best), ckpt-900 CER=0.804.
 {sample_section}
 
 ---
@@ -356,16 +357,18 @@ Apache 2.0 — see [LICENSE](https://www.apache.org/licenses/LICENSE-2.0).
 """
 
 # ── 4. Push to HF ─────────────────────────────────────────────────────────────
-api = HfApi(token="YOUR_HF_TOKEN_HERE")
+import os
+_token = os.environ.get("HF_TOKEN") or "YOUR_HF_TOKEN_HERE"
+api = HfApi(token=_token)
 
-with open("/tmp/README_ckpt1500.md", "w", encoding="utf-8") as f:
+with open("/tmp/README_ckpt1600.md", "w", encoding="utf-8") as f:
     f.write(readme)
 
 api.upload_file(
-    path_or_fileobj="/tmp/README_ckpt1500.md",
+    path_or_fileobj="/tmp/README_ckpt1600.md",
     path_in_repo="README.md",
     repo_id="shantipriya/odia-ocr-qwen-finetuned_v3",
     repo_type="model",
-    commit_message=f"Update README: checkpoint-1500 benchmark results (CER={overall_cer:.3f}, Acc={overall_acc:.1f}%)",
+    commit_message=f"Update README: checkpoint-1600 benchmark results (CER={overall_cer:.3f}, Acc={overall_acc:.1f}%)",
 )
 print(f"\nREADME pushed — CER={overall_cer:.3f}, Acc={overall_acc:.1f}%")
