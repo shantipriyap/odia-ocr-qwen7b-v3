@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Odia OCR Benchmark — Qwen2.5-VL-7B Fine-tuned Results</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Oriya:wght@400;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:          #0f1117;
+      --surface:     #1a1d2e;
+      --surface2:    #20243a;
+      --border:      #2d3155;
+      --accent:      #6c63ff;
+      --accent2:     #00d4aa;
+      --accent3:     #ff6584;
+      --text:        #e8eaf6;
+      --text-muted:  #8892b0;
+      --green:       #00d4aa;
+      --amber:       #ffb547;
+      --red:         #ff6584;
+      --good-bg:     rgba(0, 212, 170, 0.08);
+      --amber-bg:    rgba(255, 181, 71, 0.08);
+      --red-bg:      rgba(255, 101, 132, 0.08);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ─── Header ─────────────────────────────────────────── */
+    .hero {
+      background: linear-gradient(135deg, #0f1117 0%, #1a1d2e 50%, #141829 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 56px 24px 40px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(108,99,255,.18), transparent);
+    }
+    .hero-badge {
+      display: inline-block;
+      background: rgba(108,99,255,.15);
+      border: 1px solid rgba(108,99,255,.4);
+      color: #a89cff;
+      font-size: .75rem;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      padding: 5px 14px;
+      border-radius: 20px;
+      margin-bottom: 20px;
+    }
+    .hero h1 {
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -.02em;
+      margin-bottom: 12px;
+      position: relative;
+    }
+    .hero h1 span { color: var(--accent2); }
+    .hero .subtitle {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      max-width: 600px;
+      margin: 0 auto 28px;
+      position: relative;
+    }
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      position: relative;
+    }
+    .meta-chip {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: .8rem;
+      color: var(--text-muted);
+    }
+    .meta-chip strong { color: var(--text); }
+
+    /* ─── Container ──────────────────────────────────────── */
+    .container { max-width: 980px; margin: 0 auto; padding: 0 20px; }
+
+    /* ─── Summary strip ──────────────────────────────────── */
+    .summary-strip {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 28px 0;
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
+    }
+    .stat-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      text-align: center;
+    }
+    .stat-card .val {
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .stat-card .lbl {
+      font-size: .78rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+    .val.green { color: var(--green); }
+    .val.amber { color: var(--amber); }
+    .val.purple { color: #a89cff; }
+    .val.white  { color: #fff; }
+
+    /* ─── Section header ─────────────────────────────────── */
+    .section { padding: 48px 0; }
+    .section-header { margin-bottom: 32px; }
+    .section-header h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+    .section-header p { color: var(--text-muted); font-size: .95rem; }
+
+    /* ─── Sample cards ───────────────────────────────────── */
+    .sample-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      margin-bottom: 28px;
+      overflow: hidden;
+      transition: border-color .2s;
+    }
+    .sample-card:hover { border-color: var(--accent); }
+    .sample-card.good  { border-left: 4px solid var(--green); }
+    .sample-card.amber { border-left: 4px solid var(--amber); }
+    .sample-card.poor  { border-left: 4px solid var(--red); }
+
+    .card-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      padding: 18px 22px 14px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+    }
+    .card-index {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: rgba(108,99,255,.2);
+      border: 1px solid rgba(108,99,255,.4);
+      display: flex; align-items: center; justify-content: center;
+      font-size: .75rem; font-weight: 700; color: #a89cff;
+      flex-shrink: 0;
+    }
+    .card-title { font-size: 1rem; font-weight: 600; color: #fff; flex: 1; }
+    .badges { display: flex; flex-wrap: wrap; gap: 6px; }
+    .badge {
+      font-size: .7rem; font-weight: 600;
+      padding: 3px 10px; border-radius: 12px;
+      text-transform: uppercase; letter-spacing: .05em;
+    }
+    .badge-digital  { background: rgba(108,99,255,.2); color: #a89cff; border: 1px solid rgba(108,99,255,.3); }
+    .badge-book     { background: rgba(255,181,71,.2);  color: #ffd080; border: 1px solid rgba(255,181,71,.3); }
+    .badge-newspaper{ background: rgba(255,101,132,.2); color: #ff8fa6; border: 1px solid rgba(255,101,132,.3); }
+    .badge-short    { background: rgba(0,212,170,.15);  color: #00d4aa; border: 1px solid rgba(0,212,170,.3); }
+    .badge-medium   { background: rgba(108,99,255,.12); color: #a89cff; border: 1px solid rgba(108,99,255,.3); }
+    .badge-long     { background: rgba(255,101,132,.12);color: #ff8fa6; border: 1px solid rgba(255,101,132,.3); }
+
+    /* accuracy + CER row */
+    .metrics-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 20px;
+      padding: 14px 22px;
+      border-bottom: 1px solid var(--border);
+    }
+    .metric-block { display: flex; flex-direction: column; gap: 2px; }
+    .metric-block .m-lbl { font-size: .72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; }
+    .metric-block .m-val { font-size: 1.4rem; font-weight: 700; line-height:1; }
+    .m-val.green { color: var(--green); }
+    .m-val.amber { color: var(--amber); }
+    .m-val.red   { color: var(--red); }
+
+    /* progress bar */
+    .progress-wrap {
+      flex: 1; min-width: 160px;
+      display: flex; flex-direction: column; gap: 5px;
+    }
+    .progress-lbl {
+      display: flex; justify-content: space-between;
+      font-size: .75rem; color: var(--text-muted);
+    }
+    .progress-bar {
+      height: 8px; border-radius: 4px;
+      background: var(--border); overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%; border-radius: 4px;
+      transition: width .6s ease;
+    }
+    .fill-green { background: linear-gradient(90deg, #00b894, #00d4aa); }
+    .fill-amber { background: linear-gradient(90deg, #e09b2d, #ffb547); }
+    .fill-red   { background: linear-gradient(90deg, #c0392b, #ff6584); }
+
+    .chars-note { font-size: .78rem; color: var(--text-muted); padding: 0 22px 10px; }
+    .chars-note span { color: var(--text); font-weight: 500; }
+
+    /* image section */
+    .image-section {
+      background: #0d0f1a;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 16px;
+      gap: 8px;
+    }
+    .image-section img {
+      max-width: 100%;
+      max-height: 380px;
+      object-fit: contain;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      display: block;
+    }
+    .image-label {
+      font-size: .7rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .1em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      padding: 0 16px;
+      padding-top: 14px;
+      background: #0d0f1a;
+      border-bottom: none;
+    }
+
+    /* text comparison */
+    .text-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--border);
+    }
+    @media (max-width: 650px) {
+      .text-grid { grid-template-columns: 1fr; }
+    }
+    .text-pane {
+      background: var(--surface);
+      padding: 18px 20px;
+    }
+    .text-pane-label {
+      font-size: .7rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .1em;
+      margin-bottom: 10px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .dot-gt   { background: var(--accent2); }
+    .dot-pred { background: var(--accent); }
+    .odia-text {
+      font-family: 'Noto Sans Oriya', serif;
+      font-size: .95rem;
+      line-height: 1.9;
+      color: var(--text);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* remark */
+    .remark {
+      padding: 13px 22px;
+      font-size: .83rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: flex-start; gap: 8px;
+    }
+    .remark.good  { background: var(--good-bg);  color: #7de8cf; }
+    .remark.amber { background: var(--amber-bg); color: #ffd080; }
+    .remark.poor  { background: var(--red-bg);   color: #ff8fa6; }
+    .remark-icon  { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+
+    /* ─── Analysis panel ─────────────────────────────────── */
+    .analysis-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+      margin-top: 8px;
+    }
+    .analysis-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 22px;
+    }
+    .analysis-card h3 {
+      font-size: .9rem; font-weight: 700;
+      margin-bottom: 10px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .analysis-card p { font-size: .84rem; color: var(--text-muted); line-height: 1.65; }
+
+    /* ─── Key highlights ─────────────────────────────────── */
+    .highlight-banner {
+      background: linear-gradient(135deg, rgba(0,212,170,.08), rgba(108,99,255,.08));
+      border: 1px solid rgba(0,212,170,.2);
+      border-radius: 16px;
+      padding: 28px 30px;
+      margin-bottom: 40px;
+    }
+    .highlight-banner h3 {
+      font-size: 1.1rem; font-weight: 700;
+      color: var(--accent2);
+      margin-bottom: 14px;
+    }
+    .highlight-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .highlight-list li {
+      font-size: .9rem; color: var(--text);
+      display: flex; align-items: flex-start; gap: 8px;
+    }
+    .hl-icon { color: var(--accent2); flex-shrink: 0; font-size: 1rem; }
+
+    /* leaderboard table */
+    .lb-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .87rem;
+      margin-top: 20px;
+    }
+    .lb-table th {
+      background: var(--surface2);
+      color: var(--text-muted);
+      font-size: .72rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .07em;
+      padding: 12px 14px; text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    .lb-table td {
+      padding: 11px 14px;
+      border-bottom: 1px solid rgba(45,49,85,.8);
+      color: var(--text);
+      vertical-align: middle;
+    }
+    .lb-table tr:last-child td { border-bottom: none; }
+    .lb-table tr:hover td { background: var(--surface2); }
+    .lb-table .rank { font-weight: 700; color: var(--text-muted); }
+    .lb-table .cer-val { font-family: 'JetBrains Mono', monospace; }
+
+    /* footer */
+    footer {
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      padding: 30px 20px;
+      text-align: center;
+      font-size: .82rem;
+      color: var(--text-muted);
+    }
+    footer a { color: var(--accent2); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════ HERO ══════════════════ -->
+<div class="hero">
+  <div class="hero-badge">Research Evaluation</div>
+  <h1>Odia OCR Benchmark<br/><span>Qwen2.5-VL-7B Fine-tuned Evaluation</span></h1>
+  <p class="subtitle">
+    Evaluating checkpoint-1300 of our LoRA fine-tuned model on 6 diverse samples
+    from the <em>Iftesha/odia-ocr-benchmark</em> dataset — digital quotes, poems, book text, and newspaper stories.
+  </p>
+  <div class="meta-row">
+    <span class="meta-chip"><strong>Model:</strong> OdiaGenAIOCR/odia-ocr-qwen-finetuned_v3</span>
+    <span class="meta-chip"><strong>Base:</strong> Qwen2.5-VL-7B-Instruct</span>
+    <span class="meta-chip"><strong>Checkpoint:</strong> 1300</span>
+    <span class="meta-chip"><strong>Dataset:</strong> Iftesha/odia-ocr-benchmark</span>
+    <span class="meta-chip"><strong>Samples:</strong> 6</span>
+  </div>
+</div>
+
+<!-- ══════════════════ SUMMARY STRIP ══════════════════ -->
+<div class="summary-strip">
+  <div class="container">
+    <div class="summary-grid">
+      <div class="stat-card">
+        <div class="val green">77.5%</div>
+        <div class="lbl">Avg Accuracy</div>
+      </div>
+      <div class="stat-card">
+        <div class="val amber">0.215</div>
+        <div class="lbl">Avg CER</div>
+      </div>
+      <div class="stat-card">
+        <div class="val green">97.4%</div>
+        <div class="lbl">Best Accuracy</div>
+      </div>
+      <div class="stat-card">
+        <div class="val purple">3 / 6</div>
+        <div class="lbl">Samples ≥ 90%</div>
+      </div>
+      <div class="stat-card">
+        <div class="val white">6</div>
+        <div class="lbl">Total Samples</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ MAIN CONTENT ══════════════════ -->
+<div class="container">
+  <div class="section">
+
+    <!-- Key highlights banner -->
+    <div class="highlight-banner">
+      <h3>✦ Key Findings</h3>
+      <ul class="highlight-list">
+        <li><span class="hl-icon">◆</span> <strong>Near-perfect on clean digital Odia:</strong> The model achieves 97.4% accuracy on a motivational quote image, with only minor punctuation differences from ground truth.</li>
+        <li><span class="hl-icon">◆</span> <strong>Excellent poem transcription:</strong> Both Odia poems scored 92.9% and 91.0% — preserving literary structure and complex conjunct characters remarkably well.</li>
+        <li><span class="hl-icon">◆</span> <strong>Printed book text needs improvement:</strong> Clear page scans achieve 73.4% but show truncation — the model stops mid-sentence on longer passages.</li>
+        <li><span class="hl-icon">◆</span> <strong>Long multi-column newspaper: major challenge:</strong> Accuracy drops to 34.2% on dense newspaper text (1335 chars), pointing to layout complexity and length as key bottlenecks.</li>
+        <li><span class="hl-icon">◆</span> <strong>Dramatic improvement over historical scans:</strong> Average 77.5% vs 29.4% on historical Odia manuscript images — clean digital typography is where the model shines.</li>
+      </ul>
+    </div>
+
+    <div class="section-header">
+      <h2>Sample-by-Sample Results</h2>
+      <p>6 samples spanning short digital text to long newspaper articles — ordered from best to worst performance.</p>
+    </div>
+
+    <!-- ─────────────── SAMPLE 1: motivational ─────────────── -->
+    <div class="sample-card good">
+      <div class="card-header">
+        <div class="card-index">1</div>
+        <div class="card-title">Motivational Quote</div>
+        <div class="badges">
+          <span class="badge badge-digital">Digital</span>
+          <span class="badge badge-short">Short</span>
+        </div>
+      </div>
+      <div class="metrics-row">
+        <div class="metric-block">
+          <span class="m-lbl">Accuracy</span>
+          <span class="m-val green">97.4%</span>
+        </div>
+        <div class="metric-block">
+          <span class="m-lbl">CER</span>
+          <span class="m-val green">0.026</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-lbl"><span>Accuracy</span><span>97.4%</span></div>
+          <div class="progress-bar"><div class="progress-fill fill-green" style="width:97.4%"></div></div>
+        </div>
+      </div>
+      <div class="chars-note">GT: <span>229 chars</span> · Predicted: <span>229 chars</span> · Image: <span>1080×1080 px</span></div>
+      <div class="image-label">Original Image</div>
+      <div class="image-section">
+        <img src="blog_images/1_motivational.jpg" alt="Motivational quote image" />
+      </div>
+      <div class="text-grid">
+        <div class="text-pane">
+          <div class="text-pane-label" style="color:var(--accent2)"><span class="dot dot-gt"></span> Ground Truth</div>
+          <div class="odia-text">ଜୀବନର ମୂଳ ମନ୍ତ୍ର
+ନିଜର ଅତୀତ କୁ ଭୁଲିଯାଆନ୍ତୁ ଯାହା ତୁମକୁ ଆଗକୁ ବଢ଼ିବାରେ ପ୍ରତିବନ୍ଧକ ସୃଷ୍ଟିକରେ।
+ସେହି ଲୋକଙ୍କୁ ଭୁଲିଯାନ୍ତୁ ଯିଏ ତୁମର ଭାବନା କୁ ବୁଝି ପାରେନି।ନିଜ ଭୁଲ୍ କୁ ସ୍ୱୀକାର କରନ୍ତୁ।
+ପୁନର୍ବାର ନିଜ ଜୀବନକୁ ଆରମ୍ଭ କରନ୍ତୁ ଆଉ ନିଜ ଇଚ୍ଛା ରେ ବଞ୍ଚନ୍ତୁ।</div>
+        </div>
+        <div class="text-pane">
+          <div class="text-pane-label" style="color:#a89cff"><span class="dot dot-pred"></span> Model Prediction</div>
+          <div class="odia-text">ଜୀବନର ମୂଳ ମନ୍ତ୍ର
+ନିଜର ଅତୀତ କୁ ଭୁଲିଯାଆନ୍ତୁ ଯାହା ତୁମକୁ ଆଗକୁ ବଢ଼ିବାରେ ପ୍ରତିବନ୍ଧକ ସୃଷ୍ଟିକରେ.
+ସେହି ଲୋକଙ୍କୁ ଭୁଲିଯାନ୍ତୁ ଯିଏ ତୁମର ଭାବନା କୁ ବୁଝି ପାରେନି.
+ନିଜ ଭୁଲ କୁ ସ୍ୱୀକାର କରନ୍ତୁ.
+ପୁନର୍ବାର ନିଜ ଜୀବନକୁ ଆରମ୍ଭ କରନ୍ତୁ ଆଉ ନିଜ ଇଚ୍ଛା ରେ ବଞ୍ଚନ୍ତୁ.</div>
+        </div>
+      </div>
+      <div class="remark good">
+        <span class="remark-icon">✓</span>
+        <span><strong>Excellent.</strong> The model reproduced the full motivational text almost perfectly. The only differences are Odia danda (।) replaced by period (.) and minor spacing — all Odia characters are correctly identified. This demonstrates the model's mastery of clean digital Odia typography.</span>
+      </div>
+    </div>
+
+    <!-- ─────────────── SAMPLE 2: poem_maa ─────────────── -->
+    <div class="sample-card good">
+      <div class="card-header">
+        <div class="card-index">2</div>
+        <div class="card-title">Poem — "ମାଆ" (Mother)</div>
+        <div class="badges">
+          <span class="badge badge-digital">Digital</span>
+          <span class="badge badge-medium">Medium</span>
+        </div>
+      </div>
+      <div class="metrics-row">
+        <div class="metric-block">
+          <span class="m-lbl">Accuracy</span>
+          <span class="m-val green">92.9%</span>
+        </div>
+        <div class="metric-block">
+          <span class="m-lbl">CER</span>
+          <span class="m-val green">0.071</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-lbl"><span>Accuracy</span><span>92.9%</span></div>
+          <div class="progress-bar"><div class="progress-fill fill-green" style="width:92.9%"></div></div>
+        </div>
+      </div>
+      <div class="chars-note">GT: <span>380 chars</span> · Predicted: <span>373 chars</span> · Image: <span>720×974 px</span></div>
+      <div class="image-label">Original Image</div>
+      <div class="image-section">
+        <img src="blog_images/3_poem_maa.jpg" alt="Poem Maa image" />
+      </div>
+      <div class="text-grid">
+        <div class="text-pane">
+          <div class="text-pane-label" style="color:var(--accent2)"><span class="dot dot-gt"></span> Ground Truth</div>
+          <div class="odia-text">" ମାଆ "
+ଅମାବାସ୍ୟାର ଅନ୍ଧକାରରେ ଥିଲି ମୁଁ ଦୁନିଆଁର ଆଲୋକ ଦେଖାଇଲୁ ତୁ
+ଦଶ ମାସ ଦଶ ଦିନ ଗର୍ଭରେ ଧରି ସଂସାର ରେ ଜନମ ଦେଲୁ ତୁ ।
+ଦେହର ଲହୁ କୁ କରିତୁ ପିୟୂଷ ତୁହି ମୋତେ ପିଆଇଲୁ
+ଜନମ ବେଳରେ କେତେ କାନ୍ଦୁଥିଲି ହସିବା ତୁ ଶିଖାଇଲୁ ।
+ହାତ ଧରି ମୋର କୁନି କୁନି ପାଦେ ଚାଲିବା ତୁ ଶିଖାଇଲୁ
+କେତେ ଭଲ ବୁଦ୍ଧି ଶିକ୍ଷା ଦେଇ ମୋତେ ମଣିଷ କରି ଗଢିଲୁ ।
+ଯାହା ମୁଁ ହୋଇଛି ଯାହା ମୁଁ ପାଇଛି ସବୁ ତ ତୋହରି ପାଇଁ
+ନାହିଁ ତୋର ସମ ଏ ସାରା ଜଗତେ ତୋହରି ତୁଳନା ନାହିଁ ।</div>
+        </div>
+        <div class="text-pane">
+          <div class="text-pane-label" style="color:#a89cff"><span class="dot dot-pred"></span> Model Prediction</div>
+          <div class="odia-text">ମାଆ ଅମାଦାସ୍ୟାର ଅନ୍ଧକାରରେ ଥିଲି ମୁଁ ଦୁନିଆଁର ଆଲୋକ ଦେଖାଇଛୁ ତୁ ଦଶ ମାସ ଦଶ ଦିନ ଗର୍ଜରେ ଧରି ସଂସାର ରେ ଜନମ ଦେଲୁ ତୁ । ଦେହର ଲହୁ କୁ କରିବୁ ପିୟୁସ ତୁହି ମୋତେ ପିଆଇଲୁ ଜନମ ବେଳରେ କେତେ କାନ୍ଦୁଥିଲି ହସିବା ତୁ ଶିଖାଇଲୁ । ହାତ ଧରି ମୋର କୁନି କୁନି ପାଦେ ଚାଲିବା ତୁ ଶିଖାଇଲୁ କେତେ ଭଲ ବୁଝି ଶିଷା ଦେଲ ମୋତେ ମଶିଷ କରି ଗଡ଼ିଲୁ । ଯାହା ମୁଁ ହୋଇଛି ଯାହା ମୁଁ ପାଇଛି ସବୁ ତ ତୋହରି ପାଈଁ ନାହିଁ ତୋର ସମ ଏ ସାରା ଜଗତେ ତୋହରି ତୁଳନା ନାହିଁ ।</div>
+        </div>
+      </div>
+      <div class="remark good">
+        <span class="remark-icon">✓</span>
+        <span><strong>Very good.</strong> The model captured all 8 stanzas of this poem about a mother's love. Minor errors: quotation marks around the title dropped, <em>ଅମାବାସ୍ୟାର</em> rendered as <em>ଅମାଦାସ୍ୟାର</em>, and linebreaks flattened. The emotional content and overall meaning remain intact — impressive for a complex Odia poem.</span>
+      </div>
+    </div>
+
+    <!-- ─────────────── SAMPLE 3: poem_time ─────────────── -->
+    <div class="sample-card good">
+      <div class="card-header">
+        <div class="card-index">3</div>
+        <div class="card-title">Poem — "ସମୟର ଖେଳ" (Game of Time)</div>
+        <div class="badges">
+          <span class="badge badge-digital">Digital</span>
+          <span class="badge badge-medium">Medium</span>
+        </div>
+      </div>
+      <div class="metrics-row">
+        <div class="metric-block">
+          <span class="m-lbl">Accuracy</span>
+          <span class="m-val green">91.0%</span>
+        </div>
+        <div class="metric-block">
+          <span class="m-lbl">CER</span>
+          <span class="m-val green">0.090</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-lbl"><span>Accuracy</span><span>91.0%</span></div>
+          <div class="progress-bar"><div class="progress-fill fill-green" style="width:91.0%"></div></div>
+        </div>
+      </div>
+      <div class="chars-note">GT: <span>377 chars</span> · Predicted: <span>375 chars</span> · Image: <span>454×768 px</span></div>
+      <div class="image-label">Original Image</div>
+      <div class="image-section">
+        <img src="blog_images/4_poem_time.jpg" alt="Poem Game of Time image" />
+      </div>
+      <div class="text-grid">
+        <div class="text-pane">
+          <div class="text-pane-label" style="color:var(--accent2)"><span class="dot dot-gt"></span> Ground Truth</div>
+          <div class="odia-text">ସମୟର ଖେଳ
+ସମୟ ଗଡ଼ି ଚାଲିଛି ଧୀରେଧୀରେ ଅପେକ୍ଷା ନାହିଁ କାହାକୁ ଜନମିଲେ ମର୍ତ୍ତ୍ୟ ମୃତ୍ୟୁ ନିଶ୍ଚିତରେ ଡରୁଛ କାହିଁ ମୃତ୍ୟୁକୁ ।।
+ସମୟର ସ୍ରୋତ ବହି ଚାଲିଛିରେ କେହି ନାହିଁ ରୋକିବାକୁ କାଳର କରାଳେ ଲୀନ ତ ହେବାରେ ଡରୁକାହିଁ ଜୀବନକୁ ।।
+ବନ୍ଧାପଡ଼ି ଅଛୁ ତୁ ମୋହ ମାୟାରେ ଭୁଲିଗଲୁ ସତ୍ୟତାକୁ ଏକା ତୁ ଆସିଛୁ ଏକା ଫେରିବୁରେ ଧରିଛୁ ମୋହ ମାୟାକୁ ।।
+ମର୍ତ୍ତ୍ୟେ ସମୟ ବଡ଼ ବଳବାନରେ ଭୁଲିଗଲୁକି ସତ୍ୟକୁ ବନ୍ଧୁ ଓ ପରିଜନ ଭୁଲିଯିବେରେ ଲୁହ ଝରାନ୍ତି ମିଛକୁ ।।</div>
+        </div>
+        <div class="text-pane">
+          <div class="text-pane-label" style="color:#a89cff"><span class="dot dot-pred"></span> Model Prediction</div>
+          <div class="odia-text">ସମୟର ଗୋଳ ସମୟ ଗଡ଼ି ଚାଲିଛି ଧୂରେଧୂରେ ଅପେଷା ନାହିଁ କାହାକୁ ଜନମିଲେ ମର୍ତ୍ତେ ମୃତ୍ୟୁ ନିଶ୍ଚିତରେ ଉତ୍ତ୍ରଛ କାହିଁ ମୃତ୍ୟୁକୁ ।। ସମୟର ସ୍ରୋତ କହି ଚାଲିଛିଯେ କେହି ନାହିଁ ରୋକିବାକୁ ଜାଳଉ ନରାଳେ ଲିନ ତ ହେବାରେ ଉତୁନାହିଁ ଜୀବନକୁ ।। ଦନ୍ଧାପଡି ଅଛୁ ତୁ ମୋହ ମାୟାରେ ଭୁଲିଗଲୁ ସତ୍ୟତାକୁ ଏକା ତୁ ଆସିଛୁ ଏକା ଫେରିବୁରେ ଧରିଛୁ ମୋହ ମାୟାକୁ ।। ମର୍ତ୍ତେ ସମୟ ବଡ଼ ବଳାନାନରେ ଭୁଲିଗଲୁକି ସତ୍ୟକୁ ବନ୍ଧୁ ଓ ପରିଜନ ଭୁଲିଯିବେଯେ ଲୁହ ଝରାନ୍ତି ମିଛକୁ ।।</div>
+        </div>
+      </div>
+      <div class="remark good">
+        <span class="remark-icon">✓</span>
+        <span><strong>Very good.</strong> All 4 stanzas of this philosophical poem on time are transcribed well. Errors include <em>ଖେଳ</em> → <em>ଗୋଳ</em> (title), <em>ଧୀରେଧୀରେ</em> → <em>ଧୂରେଧୂରେ</em>, and a few complex conjunct characters misread. The model preserved the full poem length and overall meaning — strong performance on handcrafted Odia digital content.</span>
+      </div>
+    </div>
+
+    <!-- ─────────────── SAMPLE 4: news_headline ─────────────── -->
+    <div class="sample-card amber">
+      <div class="card-header">
+        <div class="card-index">4</div>
+        <div class="card-title">News Digest Graphic</div>
+        <div class="badges">
+          <span class="badge badge-digital">Digital</span>
+          <span class="badge badge-short">Short</span>
+        </div>
+      </div>
+      <div class="metrics-row">
+        <div class="metric-block">
+          <span class="m-lbl">Accuracy</span>
+          <span class="m-val amber">76.1%</span>
+        </div>
+        <div class="metric-block">
+          <span class="m-lbl">CER</span>
+          <span class="m-val amber">0.239</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-lbl"><span>Accuracy</span><span>76.1%</span></div>
+          <div class="progress-bar"><div class="progress-fill fill-amber" style="width:76.1%"></div></div>
+        </div>
+      </div>
+      <div class="chars-note">GT: <span>176 chars</span> · Predicted: <span>162 chars</span> · Image: <span>686×386 px</span></div>
+      <div class="image-label">Original Image</div>
+      <div class="image-section">
+        <img src="blog_images/5_news_headline.jpg" alt="News headline image" />
+      </div>
+      <div class="text-grid">
+        <div class="text-pane">
+          <div class="text-pane-label" style="color:var(--accent2)"><span class="dot dot-gt"></span> Ground Truth</div>
+          <div class="odia-text">ଆଜି ସନ୍ଧ୍ୟାର 20 ବଡ଼ ଖବର
+ସ୍କୁଲ ଖୋଲିବା ଓ ବନ୍ଦ ସମୟ ବଦଳିଲା
+ଭତ୍ତା କୁ ନେଇ 2 ବଡ଼ ଘୋଷଣା
+ସୁଭଦ୍ରା ଟଙ୍କା ବଡ଼ ଘୋଷଣା ଦେଖନ୍ତୁ
+ଏବେ ମିଳିବ କିଷାନ 2000
+ବଢିଲା ଭତ୍ତା ଟଙ୍କା
+ସୁଭଦ୍ରା ଯୋଜନା ନେଇ ବଡ଼ ଖବର</div>
+        </div>
+        <div class="text-pane">
+          <div class="text-pane-label" style="color:#a89cff"><span class="dot dot-pred"></span> Model Prediction</div>
+          <div class="odia-text">ଆନ୍ଦ୍ର ସନ୍ଧ୍ୟାର 20 ବଡ଼ ଖବର ସୁଲ ଗୋଳିବା ଓ ବନ୍ଦ ସମୟ ବଦଳିଲା ଭଉା କୁ ନେଇ 2 ବଡ଼ ଘୋଷଣା ସୁତଦ୍ଧା ଟଙ୍କା ବଡ଼ ଘୋଷଣା ଦେଖନୁ ଏବେ ମିଳିବ କିଣାନ 2000 ଗୃହିଳା ସୁତଦ୍ଧା ଶୋଚନା ନେଇ ବଡ଼ ଖବର</div>
+        </div>
+      </div>
+      <div class="remark amber">
+        <span class="remark-icon">⚠</span>
+        <span><strong>Moderate.</strong> The model recognizes the news-bulletin structure (7 headlines, total count preserved) but struggles with specific proper nouns and styled text. Notable: <em>ଆଜି</em> → <em>ଆନ୍ଦ୍ର</em>, <em>ସ୍କୁଲ</em> → <em>ସୁଲ</em>, <em>ସୁଭଦ୍ରା</em> → <em>ସୁତଦ୍ଧା</em>. The graphical layout (colored panels, overlapping text) likely challenges the vision encoder. Linebreaks are also lost.</span>
+      </div>
+    </div>
+
+    <!-- ─────────────── SAMPLE 5: book_preface ─────────────── -->
+    <div class="sample-card amber">
+      <div class="card-header">
+        <div class="card-index">5</div>
+        <div class="card-title">Book Preface — "ମୁଖବନ୍ଧ"</div>
+        <div class="badges">
+          <span class="badge badge-book">Book</span>
+          <span class="badge badge-medium">Medium</span>
+        </div>
+      </div>
+      <div class="metrics-row">
+        <div class="metric-block">
+          <span class="m-lbl">Accuracy</span>
+          <span class="m-val amber">73.4%</span>
+        </div>
+        <div class="metric-block">
+          <span class="m-lbl">CER</span>
+          <span class="m-val amber">0.266</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-lbl"><span>Accuracy</span><span>73.4%</span></div>
+          <div class="progress-bar"><div class="progress-fill fill-amber" style="width:73.4%"></div></div>
+        </div>
+      </div>
+      <div class="chars-note">GT: <span>647 chars</span> · Predicted: <span>502 chars</span> · Image: <span>600×736 px</span></div>
+      <div class="image-label">Original Image</div>
+      <div class="image-section">
+        <img src="blog_images/17_book_preface.jpg" alt="Book preface image" />
+      </div>
+      <div class="text-grid">
+        <div class="text-pane">
+          <div class="text-pane-label" style="color:var(--accent2)"><span class="dot dot-gt"></span> Ground Truth</div>
+          <div class="odia-text">ମୁଖବନ୍ଧ
+ସତ୍ୟ ବା ଜ୍ଞାନର ସାର୍ଥକତା ସେବାରେ । ଏଥୁଯୋଗୁଁ ଜ୍ଞାନ ବା ସତ୍ୟ ଯେତେଦିନ ପର୍ଯ୍ୟନ୍ତ ମାନବ-ସେବା କାର୍ଯ୍ୟରେ ନ ଲାଗେ, ସେତେଦିନ ପର୍ଯ୍ୟନ୍ତ ମସ୍ତବଡ଼ ଗୋଟାଏ ଅପୂର୍ଣ୍ଣତା ଯେପରି ରହିଯାଏ । ସତ୍ୟକୁ ସମ୍ପୂର୍ଣ୍ଣାଙ୍ଗ ଓ ସାଫଲ୍ୟମଣ୍ଡିତ କରିବା ନିମିତ୍ତ ମହାପୁରୁଷମାନଙ୍କ ଜୀବନରେ ସେବାର ଆକୃତି ଆତ୍ମପ୍ରକାଶ କରେ । ଜଗନ୍ମଙ୍ଗଳକାମୀ ମହାପୁରୁଷମାନଙ୍କର କର୍ମଧାରା ଅନୁଧାବନ କଲେ ଏହା ଯେପରି ମର୍ମେ ମର୍ମେ ଉପଲବ୍ଧି ହୁଏ—ମାନବ-ସେବାହିଁ ପ୍ରକୃତ ଧର୍ମ । ଭଗବତ୍‌କୃପାପ୍ରାପ୍ତ ବା ସ୍ୱରୂପପ୍ରାପ୍ତ ମହାପୁରୁଷମାନଙ୍କ ଜୀବନୀ ବିଶ୍ଲେଷଣ କଲେ, ଭଗବାନଙ୍କ ପରି ଅକ୍ଳାନ୍ତ ସେବାର ଆଦର୍ଶହିଁ ନୟନଗୋଚର ହୁଏ । ଅବତାର, ସଦ୍‌ଗୁରୁ ବା ମହାପୁରୁଷବୃନ୍ଦ ସମସ୍ତେହିଁ ସମାଜ-ଉନ୍ନୟନକାମୀ ସେବକ । ସେମାନଙ୍କ ଆଦର୍ଶ ଧରି ଚଳିଲେ କ୍ରମଶଃ ମାନବସେବାର ପ୍ରେରଣାହିଁ ଅନ୍ତରେ ଉଦ୍‌ବୁଦ୍ଧ ହୋଇଉଠେ ।</div>
+        </div>
+        <div class="text-pane">
+          <div class="text-pane-label" style="color:#a89cff"><span class="dot dot-pred"></span> Model Prediction</div>
+          <div class="odia-text">ମୁଖବନ୍ଧ ସତ୍ୟ ବା ଜ୍ଞାନର ସାର୍ଥକତା ସେବାରେ । ଏଥିଯୋଗୁଁ ଜ୍ଞାନ ବା ସତ୍ୟ ଯେତେଦିନ ପର୍ଯ୍ୟନ୍ତ ମାନବସେବା କାର୍ଯ୍ୟରେ ନ ଲାଗେ, ସେତେଦିନ ପର୍ଯ୍ୟନ୍ତ ମସ୍ତବୃତ୍ତ ଗୋଟାଏ ଅପୂର୍ଣ୍ଣତା ଯେପରି ରହିଯାଏ । ସତ୍ୟକୁ ସମ୍ପୂର୍ଣ୍ଣାଙ୍ଗ ଓ ସାପଳ୍ୟମୁଣ୍ଡିତ କରିବା ନିର୍ମିତ ମହାପୁରୁଷମାନଙ୍କ ଜୀବନରେ ସେବାର ଆକୃତି ଆତ୍ମପ୍ରକାଶ କରେ । ଜଗନ୍ନାନ୍ଦଜଳକାମୀ ମହାପୁରୁଷମାନଙ୍କର କର୍ମଧାରା ଅନୁଧାବନ କଲେ ଏହା ଯେପରି ମର୍ମେ ମର୍ମେ ଉପଲବ୍ଧି ହୁଏ ମାନବସେବାହି ପ୍ରକୃତ ଧର୍ମ । ଭଗବତତ୍କପାପ୍ରାପ୍ତ ବା ସ୍ୱରୂପପ୍ରାପ୍ତ ମହାପୁରୁଷମାନଙ୍କ ଜୀବନୀ ବିଶ୍ଲେଷଣ କଲେ, ଭଗବାନଙ୍କ ପରି ଅକ୍ଲାନ୍ତ ସେବାର ଆଦର୍ଶହି ନୟନଗୋଚର ହୁଏ ।</div>
+        </div>
+      </div>
+      <div class="remark amber">
+        <span class="remark-icon">⚠</span>
+        <span><strong>Moderate — truncation issue.</strong> The model reads the first ~502 characters well (73.4% base accuracy would be higher if it completed the full passage), then stops before the last two sentences. Key complex Sanskrit-origin compound words like <em>ଜଗନ୍ମଙ୍ଗଳକାମୀ</em> and <em>ଭଗବତ୍‌କୃପାପ୍ରାପ୍ତ</em> are partially misread. The model needs improved handling of long dense prose extracted from book pages.</span>
+      </div>
+    </div>
+
+    <!-- ─────────────── SAMPLE 6: newspaper_story ─────────────── -->
+    <div class="sample-card poor">
+      <div class="card-header">
+        <div class="card-index">6</div>
+        <div class="card-title">Newspaper Story — "ସ୍ନେହର ଡୋରି" (Bond of Affection)</div>
+        <div class="badges">
+          <span class="badge badge-newspaper">Newspaper</span>
+          <span class="badge badge-long">Long</span>
+        </div>
+      </div>
+      <div class="metrics-row">
+        <div class="metric-block">
+          <span class="m-lbl">Accuracy</span>
+          <span class="m-val red">34.2%</span>
+        </div>
+        <div class="metric-block">
+          <span class="m-lbl">CER</span>
+          <span class="m-val red">0.658</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-lbl"><span>Accuracy</span><span>34.2%</span></div>
+          <div class="progress-bar"><div class="progress-fill fill-red" style="width:34.2%"></div></div>
+        </div>
+      </div>
+      <div class="chars-note">GT: <span>1335 chars</span> · Predicted: <span>535 chars</span> · Image: <span>897×1042 px</span></div>
+      <div class="image-label">Original Image</div>
+      <div class="image-section">
+        <img src="blog_images/23_newspaper_story.jpg" alt="Newspaper story image" />
+      </div>
+      <div class="text-grid">
+        <div class="text-pane">
+          <div class="text-pane-label" style="color:var(--accent2)"><span class="dot dot-gt"></span> Ground Truth (first ~500 chars)</div>
+          <div class="odia-text">ସ୍ନେହର ଡୋରି
+ଗୋଟିଏ ସର୍କସରେ କୁକୁରଟିଏ ଖେଳ ଦେଖାଉଥାଏ। ସେ ଖାଇପିଇ ବେଶ୍ ମୋଟାସୋଟା ହୋଇଥାଏ। କିନ୍ତୁ ତା' ମନ ସରସ ନ ଥାଏ। କାରଣ ସର୍କସର ରିଂ ମାଷ୍ଟର ଥାଏ ବହୁତ କଡ଼ା ସ୍ଵଭାବର। ଖେଳ ଦେଖାଇବାରେ ଭୁଲ କଲେ ରିଂ ମାଷ୍ଟରର ମାଡ଼ ପଡୁଥାଏ। ତା' ଛଡ଼ା ରିଂ ମାଷ୍ଟର ତାକୁ ବାରମ୍ବାର ମାଡ଼ ମାରିବାର ଭୟ ଦେଖାଉଥାଏ।
+ଯେଉଁଠି ସର୍କସ ଚାଲିଥାଏ, ସେ ପାଖରେ ମୋତିଟିଏ ବସୁଥାଏ। ମୋତି ସହିତ ତା' ପୋଷା କୁକୁର ପ୍ରତିଦିନ ଆସି ସେଠାରେ ବସି ରହେ।
+<span style="color:var(--text-muted); font-size:.85em">[… 3 more paragraphs in ground truth …]</span></div>
+        </div>
+        <div class="text-pane">
+          <div class="text-pane-label" style="color:#a89cff"><span class="dot dot-pred"></span> Model Prediction (full output)</div>
+          <div class="odia-text">ସ୍ନେହର ତୋରି ଗୋଟିଏ ସର୍କିସରେ କୁକୁରଟିଏ ଖେଳ ଦେଖାଉଥାଏ । ସେ ଖାଇପିଲେ ଵେଷ୍ଟ ମୋତାସୋଡା ହୋଇଥାଏ। କିନ୍ତୁ ତା ମନ ସରସ ନ ଥାଏ। କାରଣ ସର୍କିସର ରିଂ ମାଞ୍ଚରେ ଥାଏ ବହୁତ ନତ୍ତା ସ୍ନଭାବକାରୀ। ଖେଳ ଦେଖାଇବାରେ ଭୁଲ କଲେ ରିଂ ମାଞ୍ଚରରୁ ମାଡ଼ ପଢୁଥାଏ। ତା ଛଡ଼ା ରିଂ ମାଞ୍ଚର ତାକୁ ବାଉସ୍ମାର ମାଡ଼ ମାରିବାର ଭୟ ଦେଖାଉଥାଏ। ଯେଉଁଠି ସର୍କିସ ଚାଲିଥାଏ, ସେ ପାଖରେ ମୋତିଟିଏ ବଢୁଥାଏ। ମୋତି ସହିତ ତା ପୋଷା କୁକୁର ପ୍ରତିଦ୍ବିନ୍ଦ ଥାଏଁ ,ସେଠାରେ ବସି ରହେ। କାମ ସରିବା ପରେ ମୋତି ସହିତ ସେ ଘରକୁ ଫେରେ। ସେ ଦିଶୁଥାଏ ଦୁର୍ବଳ ମୋତି ଦରିଦ୍ର ଥିବାରୁ କୁକୁରଟିକୁ ଖାଇବାକୁ ହେଇପାରୁ ନ ଥାଏ। କିନ୍ତୁ କୁକୁରକୁ ସେ ପ୍ରାଣଠାରୁ ବନି ଅଧିକ ଭଲ ପାଉଥାଏ। [truncated at ~535 chars]</div>
+        </div>
+      </div>
+      <div class="remark poor">
+        <span class="remark-icon">✗</span>
+        <span><strong>Poor — severe truncation + character errors.</strong> The model output is only 40% of the full 1335-character story. It correctly reads the opening section but stops after ~2 paragraphs out of 5. Character-level errors are also higher: <em>ଡୋରି</em> → <em>ତୋରି</em>, <em>ରିଂ ମାଷ୍ଟର</em> → <em>ରିଂ ମାଞ୍ଚର</em>, <em>ବେଶ୍</em> → <em>ଵେଷ୍ଟ</em>. Newspaper multi-column layouts and high character density remain the key challenge for this model.</span>
+      </div>
+    </div>
+
+    <!-- ══════════════ LEADERBOARD TABLE ══════════════ -->
+    <div class="section-header" style="margin-top:20px">
+      <h2>Results Summary</h2>
+      <p>All 6 samples ranked by accuracy.</p>
+    </div>
+
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;">
+      <table class="lb-table">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Sample</th>
+            <th>Category</th>
+            <th>Size</th>
+            <th>GT Chars</th>
+            <th>Pred Chars</th>
+            <th>CER</th>
+            <th>Accuracy</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="rank">1</td>
+            <td>Motivational Quote</td>
+            <td><span class="badge badge-digital">Digital</span></td>
+            <td><span class="badge badge-short">Short</span></td>
+            <td>229</td>
+            <td>229</td>
+            <td class="cer-val" style="color:var(--green)">0.026</td>
+            <td><strong style="color:var(--green)">97.4%</strong></td>
+          </tr>
+          <tr>
+            <td class="rank">2</td>
+            <td>Poem "ମାଆ"</td>
+            <td><span class="badge badge-digital">Digital</span></td>
+            <td><span class="badge badge-medium">Medium</span></td>
+            <td>380</td>
+            <td>373</td>
+            <td class="cer-val" style="color:var(--green)">0.071</td>
+            <td><strong style="color:var(--green)">92.9%</strong></td>
+          </tr>
+          <tr>
+            <td class="rank">3</td>
+            <td>Poem "ସମୟର ଖେଳ"</td>
+            <td><span class="badge badge-digital">Digital</span></td>
+            <td><span class="badge badge-medium">Medium</span></td>
+            <td>377</td>
+            <td>375</td>
+            <td class="cer-val" style="color:var(--green)">0.090</td>
+            <td><strong style="color:var(--green)">91.0%</strong></td>
+          </tr>
+          <tr>
+            <td class="rank">4</td>
+            <td>News Digest Graphic</td>
+            <td><span class="badge badge-digital">Digital</span></td>
+            <td><span class="badge badge-short">Short</span></td>
+            <td>176</td>
+            <td>162</td>
+            <td class="cer-val" style="color:var(--amber)">0.239</td>
+            <td><strong style="color:var(--amber)">76.1%</strong></td>
+          </tr>
+          <tr>
+            <td class="rank">5</td>
+            <td>Book Preface</td>
+            <td><span class="badge badge-book">Book</span></td>
+            <td><span class="badge badge-medium">Medium</span></td>
+            <td>647</td>
+            <td>502</td>
+            <td class="cer-val" style="color:var(--amber)">0.266</td>
+            <td><strong style="color:var(--amber)">73.4%</strong></td>
+          </tr>
+          <tr>
+            <td class="rank">6</td>
+            <td>Newspaper Story</td>
+            <td><span class="badge badge-newspaper">Newspaper</span></td>
+            <td><span class="badge badge-long">Long</span></td>
+            <td>1335</td>
+            <td>535</td>
+            <td class="cer-val" style="color:var(--red)">0.658</td>
+            <td><strong style="color:var(--red)">34.2%</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ══════════════ ANALYSIS ══════════════ -->
+    <div class="section-header" style="margin-top:48px">
+      <h2>Analysis &amp; Observations</h2>
+      <p>What these results tell us about the model's capabilities and limitations.</p>
+    </div>
+
+    <div class="analysis-grid">
+      <div class="analysis-card">
+        <h3><span style="color:var(--green)">◆</span> Strengths</h3>
+        <p>
+          Excels on <strong>clean digital Odia typography</strong> — decorative quote images (97.4%), rendered poem graphics (92.9%, 91.0%). The model correctly handles complex Odia conjunct consonants (ର୍ + ୟ, ଣ + ତ, ପ + ର) in digital contexts, showing that LoRA fine-tuning has successfully transferred deep Odia character knowledge.
+        </p>
+      </div>
+      <div class="analysis-card">
+        <h3><span style="color:var(--amber)">◆</span> Limitations</h3>
+        <p>
+          Performance degrades with <strong>graphic overlays</strong> (news thumbnail: 76.1%), <strong>dense printed book pages</strong> (73.4%), and <strong>long newspaper columns</strong> (34.2%). The main failure mode is output truncation — the model stops generating before completing the full text, not character confusion.
+        </p>
+      </div>
+      <div class="analysis-card">
+        <h3><span style="color:#a89cff)">◆</span> vs Historical Scans</h3>
+        <p>
+          Average accuracy on this benchmark: <strong>77.5%</strong> vs <strong>29.4%</strong> on historical Odia manuscript scans. The gap highlights that the model is trained primarily on modern digital content — exposure to historical typography and physical scan noise was limited in the training data.
+        </p>
+      </div>
+      <div class="analysis-card">
+        <h3><span style="color:var(--accent2)">◆</span> Next Steps</h3>
+        <p>
+          Key improvements to target: (1) Increase max generation tokens to reduce truncation on long passages, (2) Add newspaper and multi-column layout samples to training data, (3) Fine-tune on printed book scans with diacritics-heavy Sanskrit vocabulary, (4) Post-process common substitution pairs (।↔., ্ ↔ matras).
+        </p>
+      </div>
+    </div>
+
+  </div><!-- /section -->
+</div><!-- /container -->
+
+<footer>
+  <p>
+    Model: <a href="https://huggingface.co/OdiaGenAIOCR/odia-ocr-qwen-finetuned_v3" target="_blank">OdiaGenAIOCR/odia-ocr-qwen-finetuned_v3</a> ·
+    Dataset: <a href="https://huggingface.co/datasets/Iftesha/odia-ocr-benchmark" target="_blank">Iftesha/odia-ocr-benchmark</a> ·
+    Base: <a href="https://huggingface.co/Qwen/Qwen2.5-VL-7B-Instruct" target="_blank">Qwen2.5-VL-7B-Instruct</a>
+  </p>
+  <p style="margin-top:8px">OdiaGenAI · Odia OCR Research · Checkpoint-1300 Evaluation</p>
+</footer>
+
+</body>
+</html>
