@@ -295,6 +295,13 @@ Training loss drops sharply as the model adapts to Odia OCR:
 > Accuracy is reported as **1 − CER** (character-level).  
 > ⚠️ **Eval dataset note**: Steps 0/100/200 used **word-level** images (`shantipriya/odia-ocr-merged`, single words), which yields lower CER. Step 300 used **paragraph-level** images (`OdiaGenAIOCR/synthetic_data`, full paragraphs, ~300 chars) — a much harder task. The lower accuracy at step 300 reflects the harder benchmark, not regression. Full paragraph-level evaluation will be the standard going forward.
 
+### Per-category Accuracy: Best (ckpt-1300) vs Latest (ckpt-1800)
+
+![Per-category Accuracy Comparison](https://huggingface.co/shantipriya/odia-ocr-qwen-finetuned_v3/resolve/main/assets/benchmark_category_accuracy.png)
+
+> Accuracy per OCR category — comparing the **best checkpoint (ckpt-1300)** against the **latest checkpoint (ckpt-1800)**.  
+> Handwritten and Scene Text categories show the strongest performance; Book and Newspaper remain the hardest.
+
 ---
 
 ## ⭐ Best Checkpoint: 1300 (CER=0.655, Acc=34.5%)
