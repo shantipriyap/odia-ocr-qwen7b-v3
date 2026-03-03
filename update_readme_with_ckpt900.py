@@ -9,7 +9,7 @@ Run this after /tmp/eval_full_ckpt900_results.json is produced on the server.
 import subprocess, json, sys
 
 SERVER = "root@135.181.63.224"
-REMOTE_JSON = "/tmp/eval_full_ckpt1700_results.json"
+REMOTE_JSON = "/tmp/eval_full_ckpt1800_results.json"
 
 # ── 1. Download results ──────────────────────────────────────────────────────
 print("Downloading eval results from server …")
@@ -30,7 +30,7 @@ for s in samples:
     by_cat.setdefault(cat, []).append(s.get("cer", 1.0))
 
 # Summary
-print("\n=== Per-category CER (checkpoint-1700) ===")
+print("\n=== Per-category CER (checkpoint-1800) ===")
 cat_rows = []
 for cat in ["scene_text", "handwritten", "Digital", "Book", "Newspaper", "printed"]:
     if cat in by_cat:
@@ -51,7 +51,7 @@ print(f"\n  {'Overall':15s} n={len(samples):3d}  CER={overall_cer:.3f}  Acc={ove
 # ── 2b. Download sample manifest (images already uploaded to HF) ─────────────
 print("\nDownloading sample manifest …")
 proc2 = subprocess.run(
-    ["ssh", SERVER, "cat /tmp/bench_manifest_ckpt1700.json"],
+    ["ssh", SERVER, "cat /tmp/bench_manifest_ckpt1800.json"],
     capture_output=True, text=True, timeout=30
 )
 manifest = json.loads(proc2.stdout) if proc2.returncode == 0 else []
@@ -128,12 +128,12 @@ Quality icons: ✅ Good (CER < 0.15) · 🔶 Mixed (CER 0.15–0.65) · ❌ Bad 
 > Best performance: **handwritten** and **scene_text** categories.  
 > ⭐ Use `checkpoint-1300` for best inference results.
 
-### Sample Inferences — Latest Checkpoint 1700 (CER=0.912, Acc=8.8%) — 5 per category
+### Sample Inferences — Latest Checkpoint 1800 (CER=0.750, Acc=24.9%) — 5 per category
 
-Latest evaluated checkpoint (step 1700/3000). Note: model is in overfitting phase — ckpt-1300 gives better results.
+Latest evaluated checkpoint (step 1800/3000). Note: ckpt-1300 still gives best overall results.
 
 {per_cat_sections}
-> ⚠️ Model is overfitting after step 1300 — training loss continues to drop but benchmark accuracy is degrading.
+> ⚠️ Model shows overfitting pattern after step 1300 (best). Ckpt-1800 shows partial recovery (24.9%) vs ckpt-1700 (8.8%).
 """
 
 from huggingface_hub import HfApi
@@ -282,8 +282,8 @@ Training loss drops sharply as the model adapts to Odia OCR:
 | **1400** | **0.015** | **0.690** | **31.0%** | paragraph-level |
 | **1500** | **0.012** | **0.690** | **31.0%** | paragraph-level |
 | **1600** | **0.010** | **0.758** | **24.2%** | paragraph-level |
-| **1700** | **~0.009** | **{overall_cer:.3f}** | **{overall_acc:.1f}%** | paragraph-level |
-| **1800** | **0.0085** | pending | pending | paragraph-level |
+| **1700** | **~0.009** | **0.912** | **8.8%** | paragraph-level |
+| **1800** | **0.0085** | **{overall_cer:.3f}** | **{overall_acc:.1f}%** | paragraph-level |
 
 > ⚠️ **Overfitting note**: Best checkpoint is **1300** (CER=0.655, Acc=34.5%). Performance degrades after step 1300 despite training loss continuing to drop.
 
@@ -302,15 +302,15 @@ Training loss drops sharply as the model adapts to Odia OCR:
 Checkpoint-1300 is the best performing checkpoint. Use this for inference:  
 `shantipriya/odia-ocr-qwen-finetuned_v3` — load with `revision="checkpoint-1300"`
 
-## Checkpoint-1700 Benchmark Results (151 samples — Iftesha/odia-ocr-benchmark)
+## Checkpoint-1800 Benchmark Results (151 samples — Iftesha/odia-ocr-benchmark)
 
-Latest eval at **checkpoint-1700** (note: overfitting phase — ckpt-1300 remains best):
+Latest eval at **checkpoint-1800** (note: ckpt-1300 remains best overall):
 
 | Category | Samples | Avg CER | Accuracy (1−CER) |
 |----------|--------:|--------:|----------------:|
 {cat_table_rows}
 > Benchmark: [Iftesha/odia-ocr-benchmark](https://huggingface.co/datasets/Iftesha/odia-ocr-benchmark)  
-> Checkpoint-1700 results (CER={overall_cer:.3f}). History: ckpt-1600 CER=0.758, ckpt-1500 CER=0.690, **ckpt-1300 CER=0.655 (best)**, ckpt-900 CER=0.804.  
+> Checkpoint-1800 results (CER={overall_cer:.3f}). History: ckpt-1700 CER=0.912, ckpt-1600 CER=0.758, ckpt-1500 CER=0.690, **ckpt-1300 CER=0.655 (best)**, ckpt-900 CER=0.804.  
 > ⭐ **Recommended checkpoint for inference: ckpt-1300** (34.5% accuracy).
 {sample_section}
 
@@ -401,14 +401,14 @@ import os
 _token = os.environ.get("HF_TOKEN") or "YOUR_HF_TOKEN_HERE"
 api = HfApi(token=_token)
 
-with open("/tmp/README_ckpt1700.md", "w", encoding="utf-8") as f:
+with open("/tmp/README_ckpt1800.md", "w", encoding="utf-8") as f:
     f.write(readme)
 
 api.upload_file(
-    path_or_fileobj="/tmp/README_ckpt1700.md",
+    path_or_fileobj="/tmp/README_ckpt1800.md",
     path_in_repo="README.md",
     repo_id="shantipriya/odia-ocr-qwen-finetuned_v3",
     repo_type="model",
-    commit_message=f"Update README: ckpt-1700 results (CER={overall_cer:.3f}), best=ckpt-1300 (CER=0.655, Acc=34.5%), samples from best checkpoint",
+    commit_message=f"Update README: ckpt-1800 results (CER={overall_cer:.3f}), best=ckpt-1300 (CER=0.655, Acc=34.5%), latest samples ckpt-1800",
 )
 print(f"\nREADME pushed — CER={overall_cer:.3f}, Acc={overall_acc:.1f}%")

@@ -20,6 +20,7 @@ data = [
     {"step": 1500, "cer": 0.690, "acc": 31.0},
     {"step": 1600, "cer": 0.758, "acc": 24.2},
     {"step": 1700, "cer": 0.912, "acc": 8.8},
+    {"step": 1800, "cer": 0.750, "acc": 24.9},
 ]
 
 steps = [d["step"] for d in data]
