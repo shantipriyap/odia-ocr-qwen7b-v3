@@ -9,7 +9,7 @@ Run this after /tmp/eval_full_ckpt900_results.json is produced on the server.
 import subprocess, json, sys
 
 SERVER = "root@135.181.63.224"
-REMOTE_JSON = "/tmp/eval_full_ckpt1600_results.json"
+REMOTE_JSON = "/tmp/eval_full_ckpt1700_results.json"
 
 # ── 1. Download results ──────────────────────────────────────────────────────
 print("Downloading eval results from server …")
@@ -30,7 +30,7 @@ for s in samples:
     by_cat.setdefault(cat, []).append(s.get("cer", 1.0))
 
 # Summary
-print("\n=== Per-category CER (checkpoint-1600) ===")
+print("\n=== Per-category CER (checkpoint-1700) ===")
 cat_rows = []
 for cat in ["scene_text", "handwritten", "Digital", "Book", "Newspaper", "printed"]:
     if cat in by_cat:
@@ -51,11 +51,20 @@ print(f"\n  {'Overall':15s} n={len(samples):3d}  CER={overall_cer:.3f}  Acc={ove
 # ── 2b. Download sample manifest (images already uploaded to HF) ─────────────
 print("\nDownloading sample manifest …")
 proc2 = subprocess.run(
-    ["ssh", SERVER, "cat /tmp/bench_manifest_ckpt1600.json"],
+    ["ssh", SERVER, "cat /tmp/bench_manifest_ckpt1700.json"],
     capture_output=True, text=True, timeout=30
 )
 manifest = json.loads(proc2.stdout) if proc2.returncode == 0 else []
 print(f"Manifest: {len(manifest)} entries")
+
+# ── 2c. Download ckpt-1300 manifest (best checkpoint samples) ─────────────────
+print("\nDownloading ckpt-1300 best-checkpoint manifest …")
+proc3 = subprocess.run(
+    ["ssh", SERVER, "cat /tmp/bench_manifest_ckpt1300.json"],
+    capture_output=True, text=True, timeout=30
+)
+manifest_1300 = json.loads(proc3.stdout) if proc3.returncode == 0 else []
+print(f"Ckpt-1300 manifest: {len(manifest_1300)} entries")
 
 # ── 3. Build the updated README ───────────────────────────────────────────────
 cat_table_rows = ""
@@ -97,16 +106,34 @@ for cat in CAT_ORDER:
     if cat in man_by_cat:
         per_cat_sections += build_cat_section(cat, man_by_cat[cat])
 
-sample_section = f"""
-### Sample Inferences — Checkpoint 1600 (5 per category)
+# Build ckpt-1300 best checkpoint samples
+man1300_by_cat = defaultdict(list)
+for e in manifest_1300:
+    man1300_by_cat[e["category"]].append(e)
 
+best_cat_sections = ""
+for cat in CAT_ORDER:
+    if cat in man1300_by_cat:
+        best_cat_sections += build_cat_section(cat, man1300_by_cat[cat])
+
+sample_section = f"""
+### Sample Inferences — Best Checkpoint 1300 (CER=0.655, Acc=34.5%) — 5 per category
+
+Checkpoint-1300 is the **best checkpoint overall** — lowest CER and highest accuracy across all categories.
 Each row shows the original image, ground truth text, and model prediction.
 Quality icons: ✅ Good (CER < 0.15) · 🔶 Mixed (CER 0.15–0.65) · ❌ Bad (CER > 0.65)
 
-{per_cat_sections}
+{best_cat_sections}
 > Evaluated on [Iftesha/odia-ocr-benchmark](https://huggingface.co/datasets/Iftesha/odia-ocr-benchmark) — **out-of-domain** from training data.  
-> Model performs best on **handwritten** (63.4% acc) and **scene_text** (33.2% acc).  
-> `Book` / `Newspaper` / `printed` remain challenging at this training stage (step 1600/3000).
+> Best performance: **handwritten** and **scene_text** categories.  
+> ⭐ Use `checkpoint-1300` for best inference results.
+
+### Sample Inferences — Latest Checkpoint 1700 (CER=0.912, Acc=8.8%) — 5 per category
+
+Latest evaluated checkpoint (step 1700/3000). Note: model is in overfitting phase — ckpt-1300 gives better results.
+
+{per_cat_sections}
+> ⚠️ Model is overfitting after step 1300 — training loss continues to drop but benchmark accuracy is degrading.
 """
 
 from huggingface_hub import HfApi
@@ -148,7 +175,7 @@ The model is trained to extract printed and synthetic Odia text from paragraph-l
 | **Adapter type** | LoRA (rank 16, alpha 32) |
 | **Task** | Image → Odia text transcription |
 | **Script** | Odia (ଓଡ଼ିଆ) |
-| **Training steps** | 3 000 (ongoing — latest: step 900/3000) |
+| **Training steps** | 3 000 (completed — best checkpoint: step 1300/3000) |
 | **Batch size** | 2 × gradient-accumulation 8 = effective 16 |
 | **Hardware** | 1 × NVIDIA A100 80 GB |
 | **Framework** | Transformers + PEFT + TRL |
@@ -254,8 +281,11 @@ Training loss drops sharply as the model adapts to Odia OCR:
 | **1300** | — | **0.655** | **34.5%** | paragraph-level |
 | **1400** | **0.015** | **0.690** | **31.0%** | paragraph-level |
 | **1500** | **0.012** | **0.690** | **31.0%** | paragraph-level |
-| **1600** | **0.010** | **{overall_cer:.3f}** | **{overall_acc:.1f}%** | paragraph-level |
-| … (training ongoing) | ↓ | ↓ | ↑ | |
+| **1600** | **0.010** | **0.758** | **24.2%** | paragraph-level |
+| **1700** | **~0.009** | **{overall_cer:.3f}** | **{overall_acc:.1f}%** | paragraph-level |
+| **1800** | **0.0085** | pending | pending | paragraph-level |
+
+> ⚠️ **Overfitting note**: Best checkpoint is **1300** (CER=0.655, Acc=34.5%). Performance degrades after step 1300 despite training loss continuing to drop.
 
 > Checkpoints are pushed every 100 training steps.  
 > Accuracy is reported as **1 − CER** (character-level).  
@@ -263,15 +293,21 @@ Training loss drops sharply as the model adapts to Odia OCR:
 
 ---
 
-## Checkpoint-1600 Benchmark Results (151 samples — Iftesha/odia-ocr-benchmark)
+## ⭐ Best Checkpoint: 1300 (CER=0.655, Acc=34.5%)
 
-Evaluated on all 151 out-of-domain samples across 6 categories at **checkpoint-1600**:
+Checkpoint-1300 is the best performing checkpoint. Use this for inference:  
+`shantipriya/odia-ocr-qwen-finetuned_v3` — load with `revision="checkpoint-1300"`
+
+## Checkpoint-1700 Benchmark Results (151 samples — Iftesha/odia-ocr-benchmark)
+
+Latest eval at **checkpoint-1700** (note: overfitting phase — ckpt-1300 remains best):
 
 | Category | Samples | Avg CER | Accuracy (1−CER) |
 |----------|--------:|--------:|----------------:|
 {cat_table_rows}
 > Benchmark: [Iftesha/odia-ocr-benchmark](https://huggingface.co/datasets/Iftesha/odia-ocr-benchmark)  
-> Latest checkpoint-1600 results (CER={overall_cer:.3f}). Compare: ckpt-1500 CER=0.690, ckpt-1300 CER=0.655 (best), ckpt-900 CER=0.804.
+> Checkpoint-1700 results (CER={overall_cer:.3f}). History: ckpt-1600 CER=0.758, ckpt-1500 CER=0.690, **ckpt-1300 CER=0.655 (best)**, ckpt-900 CER=0.804.  
+> ⭐ **Recommended checkpoint for inference: ckpt-1300** (34.5% accuracy).
 {sample_section}
 
 ---
@@ -361,14 +397,14 @@ import os
 _token = os.environ.get("HF_TOKEN") or "YOUR_HF_TOKEN_HERE"
 api = HfApi(token=_token)
 
-with open("/tmp/README_ckpt1600.md", "w", encoding="utf-8") as f:
+with open("/tmp/README_ckpt1700.md", "w", encoding="utf-8") as f:
     f.write(readme)
 
 api.upload_file(
-    path_or_fileobj="/tmp/README_ckpt1600.md",
+    path_or_fileobj="/tmp/README_ckpt1700.md",
     path_in_repo="README.md",
     repo_id="shantipriya/odia-ocr-qwen-finetuned_v3",
     repo_type="model",
-    commit_message=f"Update README: checkpoint-1600 benchmark results (CER={overall_cer:.3f}, Acc={overall_acc:.1f}%)",
+    commit_message=f"Update README: ckpt-1700 results (CER={overall_cer:.3f}), best=ckpt-1300 (CER=0.655, Acc=34.5%), samples from best checkpoint",
 )
 print(f"\nREADME pushed — CER={overall_cer:.3f}, Acc={overall_acc:.1f}%")
