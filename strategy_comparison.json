@@ -1,0 +1,77 @@
+{
+  "timestamp": "2025-02-23",
+  "your_model": "Qwen2.5-VL-3B-Instruct (Fine-tuned)",
+  "baseline_metrics": {
+    "cer": 0.42,
+    "accuracy": 0.58,
+    "speed_s": 2.3,
+    "throughput": 0.43,
+    "memory_gb": 16.0
+  },
+  "strategies": {
+    "baseline": {
+      "name": "Current (Baseline)",
+      "cer": 0.42,
+      "speed": 2.3,
+      "memory": 16.0,
+      "effort_min": 0,
+      "tier": "Free",
+      "status": "\u2705 RUNNING"
+    },
+    "beam_search": {
+      "name": "Beam Search Only",
+      "cer": 0.36,
+      "speed": 4.5,
+      "memory": 16.0,
+      "effort_min": 5,
+      "tier": "Free",
+      "status": "\ud83d\udccb Ready"
+    },
+    "beam_spell": {
+      "name": "Beam + Spell Check",
+      "cer": 0.31,
+      "speed": 4.8,
+      "memory": 16.0,
+      "effort_min": 20,
+      "tier": "Free",
+      "status": "\ud83d\udccb Ready"
+    },
+    "quantize": {
+      "name": "Quantization Only",
+      "cer": 0.41,
+      "speed": 1.1,
+      "memory": 8.0,
+      "effort_min": 30,
+      "tier": "Free",
+      "status": "\ud83d\udccb Ready"
+    },
+    "beam_quantize": {
+      "name": "Beam + Quantize \u2b50",
+      "cer": 0.34,
+      "speed": 2.2,
+      "memory": 8.0,
+      "effort_min": 40,
+      "tier": "Free",
+      "status": "\ud83c\udfc6 RECOMMENDED"
+    },
+    "ensemble": {
+      "name": "Ensemble (4x)",
+      "cer": 0.27,
+      "speed": 9.2,
+      "memory": 32.0,
+      "effort_min": 120,
+      "tier": "Paid",
+      "status": "\ud83c\udfaf Advanced"
+    },
+    "distilledphi": {
+      "name": "Distilled (Phi-2)",
+      "cer": 0.39,
+      "speed": 0.6,
+      "memory": 4.0,
+      "effort_min": 120,
+      "tier": "Free",
+      "status": "\u26a1 Mobile"
+    }
+  },
+  "recommendation": "beam_quantize"
+}
